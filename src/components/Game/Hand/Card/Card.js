@@ -2,7 +2,7 @@ import React from 'react';
 
 const card = () => {
     return (
-        <div>
+        <div style={{ borderStyle: "solid", borderWidth: "3px", width: "120px", height: "160px"}}>
             Card
         </div>
     );

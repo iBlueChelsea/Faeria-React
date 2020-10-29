@@ -4,12 +4,12 @@ import Well from "./Well/Well";
 import God from "./God/God";
 
 const board = () => {
-  //Set Board params!!!
-  const hexSize = 65;
+  const hexSize = 50;
   const boardMaxHeight = 6;
+  const godMaxHeight = boardMaxHeight + 1;
   const boardTilesMap = { A: 2, B: 5, C: 6, D: 5, E: 6, F: 5, G: 2 };
   const wellPositions = { A: [0, 3], G: [0, 3] };
-  //Set Board params!!!
+  const godPositions = { D: [0, 6] };
 
   const tiles = Object.keys(boardTilesMap).map((column, i) => {
     return [...Array(boardTilesMap[column])].map((_, j) => {
@@ -23,9 +23,10 @@ const board = () => {
           startPosY={
             parity
               ? Math.sqrt(3) *
-                hexSize *
-                ((boardMaxHeight - boardTilesMap[column]) * 0.5 + j)
-              : Math.sqrt(3) * hexSize * j + Math.sqrt(3) * hexSize * 0.5
+                  hexSize *
+                  ((boardMaxHeight - boardTilesMap[column]) * 0.5 + j) +
+                Math.sqrt(3) * hexSize * 0.5
+              : Math.sqrt(3) * hexSize * j + Math.sqrt(3) * hexSize
           }
         />
       );
@@ -50,14 +51,46 @@ const board = () => {
                   wellPositions[column].length +
                   wellPositions[column][i]) *
                   Math.sqrt(3) *
-                  hexSize -
-                Math.sqrt(3) * hexSize * 0.5
+                  hexSize
               : (boardMaxHeight -
                   boardTilesMap[column] -
                   wellPositions[column].length +
                   wellPositions[column][i]) *
                 Math.sqrt(3) *
-                hexSize
+                hexSize +
+                Math.sqrt(3) * hexSize * 0.5
+          }
+        />
+      );
+    });
+  });
+
+  const gods = Object.keys(godPositions).map((column) => {
+    return godPositions[column].map((_, i) => {
+      let parity = Object.keys(boardTilesMap).indexOf(column) % 2 === 0;
+      return (
+        <God
+          key={"god-" + column + godPositions[column][i]}
+          id={"god-" + column + godPositions[column][i]}
+          r={hexSize * 0.65}
+          cx={
+            hexSize * 1.5 * Object.keys(boardTilesMap).indexOf(column) + hexSize
+          }
+          cy={
+            parity
+              ? (godMaxHeight -
+                  boardTilesMap[column] -
+                  godPositions[column].length +
+                  godPositions[column][i]) *
+                  Math.sqrt(3) *
+                  hexSize
+              : (godMaxHeight -
+                  boardTilesMap[column] -
+                  godPositions[column].length +
+                  godPositions[column][i]) *
+                  Math.sqrt(3) *
+                  hexSize +
+                Math.sqrt(3) * hexSize * 0.5
           }
         />
       );
@@ -65,16 +98,13 @@ const board = () => {
   });
 
   return (
-    <React.Fragment>
-      <svg width="1280" height="720">
+    <div style={{ justifyContent: "center", display: "flex"}}>
+      <svg width={hexSize*1.5*Object.keys(boardTilesMap).length+hexSize*0.5} height={Math.sqrt(3) * hexSize * godMaxHeight}>
         {tiles}
         {wells}
-        <God 
-              cx={50}
-              cy={50}
-              r={32.5}/>
+        {gods}
       </svg>
-    </React.Fragment>
+    </div>
   );
 };
 
