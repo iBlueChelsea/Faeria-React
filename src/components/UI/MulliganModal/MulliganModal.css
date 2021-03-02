@@ -1,0 +1,30 @@
+.modal {
+    position: fixed;
+    z-index: 500;
+    background-color: rgba(114, 114, 114, 0.753);
+    width: 96%;
+    height: 96%;
+    border: 1px solid #ccc;
+    box-shadow: 1px 1px 1px black;
+    padding: 16px;
+    left: 2%;
+    top: 2%;
+    box-sizing: border-box;
+    transition: all 0.3s ease-out;
+}
+
+.modal-confirm {
+    background-color: #00779e;
+    border: 10px solid #005977;
+    border-radius: 12px;
+    width: 20%;
+    text-align: center;
+    font-size: 50px;
+    font-weight: 900;
+    color: white;
+}
+
+.modal-confirm:hover {
+    background-color: #00a8e0e8;
+    cursor: pointer;
+}

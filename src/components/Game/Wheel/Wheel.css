@@ -1,0 +1,47 @@
+.wheel-A1 {
+    fill: #5bb21b;
+    stroke: #00FA9A;
+    stroke-width: 3px;
+}
+
+.wheel-A2 {
+    fill: #0091e5;
+    stroke: #00FA9A;
+    stroke-width: 3px;
+}
+
+.wheel-B1 {
+    fill: #cf3201;
+    stroke: #00FA9A;
+    stroke-width: 3px;
+}
+
+.wheel-B2 {
+    fill: #baa79e;
+    stroke: #00FA9A;
+    stroke-width: 3px;
+}
+
+.wheel-B3 {
+    fill: #2F4F4F;
+    stroke: #00FA9A;
+    stroke-width: 3px;
+}
+
+.wheel-C1 {
+    fill: #e5a018;
+    stroke: #00FA9A;
+    stroke-width: 3px;
+}
+
+.wheel-C2 {
+    fill: #2F4F4F;
+    stroke: #00FA9A;
+    stroke-width: 3px;
+}
+
+.not-selectable {
+    fill: #2F4F4F;
+    stroke: #00FA9A;
+    stroke-width: 3px;
+}

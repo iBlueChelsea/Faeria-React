@@ -3,7 +3,7 @@ import Tile from "./Tile/Tile";
 import Well from "./Well/Well";
 import God from "./God/God";
 
-const board = () => {
+const Board = (props) => {
   const hexSize = 50;
   const boardMaxHeight = 6;
   const godMaxHeight = boardMaxHeight + 1;
@@ -18,6 +18,7 @@ const board = () => {
         <Tile
           key={column + (j + 1)}
           id={column + (j + 1)}
+          type={props.data.tiles[column + (j + 1)].type}
           hexSize={hexSize}
           startPosX={hexSize * i * 1.5}
           startPosY={
@@ -40,6 +41,7 @@ const board = () => {
         <Well
           key={"well-" + column + wellPositions[column][i]}
           id={"well-" + column + wellPositions[column][i]}
+          data={props.data.wells[column + wellPositions[column][i]]}
           r={hexSize * 0.5}
           cx={
             hexSize * 1.5 * Object.keys(boardTilesMap).indexOf(column) + hexSize
@@ -72,6 +74,7 @@ const board = () => {
         <God
           key={"god-" + column + godPositions[column][i]}
           id={"god-" + column + godPositions[column][i]}
+          data={props.data.gods[column + godPositions[column][i]]}
           r={hexSize * 0.65}
           cx={
             hexSize * 1.5 * Object.keys(boardTilesMap).indexOf(column) + hexSize
@@ -108,4 +111,4 @@ const board = () => {
   );
 };
 
-export default board;
+export default Board;

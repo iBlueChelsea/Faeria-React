@@ -1,0 +1,47 @@
+.f {
+    stroke: #5bb21b;
+    fill: black;
+    stroke-width: 3px;
+}
+
+.l {
+    stroke: #0091e5;
+    fill: black;
+    stroke-width: 3px;
+}
+
+.m {
+    stroke: #cf3201;
+    fill: black;
+    stroke-width: 3px;
+}
+
+.d {
+    stroke: #e5a018;
+    fill: black;
+    stroke-width: 3px;
+}
+
+.f-text {
+    stroke: #5bb21b;
+    stroke-width: 2px;
+    text-anchor: middle;
+}
+
+.l-text {
+    stroke: #0091e5;
+    stroke-width: 2px;
+    text-anchor: middle;
+}
+
+.m-text {
+    stroke: #cf3201;
+    stroke-width: 2px;
+    text-anchor: middle;
+}
+
+.d-text {
+    stroke: #e5a018;
+    stroke-width: 2px;
+    text-anchor: middle;
+}

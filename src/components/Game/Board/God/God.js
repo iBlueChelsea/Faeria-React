@@ -1,6 +1,9 @@
-import React from "react";
+import React, {useState} from "react";
 
-const god = (props) => {
+const God = (props) => {
+  const [health,setHealth] = useState(props.data.health);
+  const [wasHit,setWasHit] = useState(props.data.wasHit);
+
   return (
     <g>
     <circle
@@ -16,4 +19,4 @@ const god = (props) => {
   );
 };
 
-export default god;
+export default God;

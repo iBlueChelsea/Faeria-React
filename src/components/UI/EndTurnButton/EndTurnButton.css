@@ -1,0 +1,11 @@
+.endturn-button {
+    fill: #2F4F4F;
+    stroke: #00FA9A;
+    stroke-width: 10px;
+}
+
+.endturn-text {
+    stroke: #00FA9A;
+    stroke-width: 3px;
+    text-anchor: middle;
+}

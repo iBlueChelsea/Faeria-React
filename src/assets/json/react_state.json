@@ -1,0 +1,952 @@
+{
+    "status": {
+        "finished": false,
+        "turn": 0,
+        "current": "player1"
+    },
+    "board": {
+        "wells": {
+            "A0": {
+                "available": true,
+                "collected": false
+            },
+            "A3": {
+                "available": true,
+                "collected": false
+            },
+            "G0": {
+                "available": true,
+                "collected": false
+            },
+            "G3": {
+                "available": true,
+                "collected": false
+            }
+        },
+        "tiles": {
+            "A1": {
+                "type": "none",
+                "owner": "",
+                "occupant": {
+                    "player": "player1",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "A2": {
+                "type": "none",
+                "owner": "",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "B1": {
+                "type": "forest",
+                "owner": "player2",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "B2": {
+                "type": "none",
+                "owner": "",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "B3": {
+                "type": "none",
+                "owner": "",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "B4": {
+                "type": "none",
+                "owner": "",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "B5": {
+                "type": "none",
+                "owner": "",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "C1": {
+                "type": "prairie",
+                "owner": "player2",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "C2": {
+                "type": "none",
+                "owner": "",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "C3": {
+                "type": "none",
+                "owner": "",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "C4": {
+                "type": "none",
+                "owner": "",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "C5": {
+                "type": "none",
+                "owner": "",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "C6": {
+                "type": "none",
+                "owner": "",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "D1": {
+                "type": "none",
+                "owner": "",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "D2": {
+                "type": "none",
+                "owner": "",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "D3": {
+                "type": "none",
+                "owner": "",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "D4": {
+                "type": "none",
+                "owner": "",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "D5": {
+                "type": "none",
+                "owner": "",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "E1": {
+                "type": "desert",
+                "owner": "player2",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "E2": {
+                "type": "none",
+                "owner": "",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "E3": {
+                "type": "none",
+                "owner": "",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "E4": {
+                "type": "none",
+                "owner": "",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "E5": {
+                "type": "none",
+                "owner": "",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "E6": {
+                "type": "lake",
+                "owner": "player1",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "F1": {
+                "type": "none",
+                "owner": "",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "F2": {
+                "type": "none",
+                "owner": "",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "F3": {
+                "type": "none",
+                "owner": "",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "F4": {
+                "type": "none",
+                "owner": "",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "F5": {
+                "type": "mountain",
+                "owner": "player1",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "G1": {
+                "type": "none",
+                "owner": "",
+                "occupant": {
+                    "player": "player1",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            },
+            "G2": {
+                "type": "none",
+                "owner": "",
+                "occupant": {
+                    "player": "",
+                    "id": 0,
+                    "health": 0,
+                    "attack": 0,
+                    "hasMoved": false,
+                    "hasAttacked": false,
+                    "effectUsed": false
+                }
+            }
+        },
+        "gods": {
+            "D0": {
+                "health": 20,
+                "wasHit": false
+            },
+            "D6": {
+                "health": 20,
+                "wasHit": false
+            }
+        }
+    },
+    "player1": {
+        "name": "BabyBlue",
+        "mulligan": false,
+        "health": 20,
+        "faeria": 3,
+        "hand": [1,2,3,4,5,6,7,8],
+        "deck": [9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30],
+        "cards": {
+            "1": {
+                "id": 4,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "2": {
+                "id": 3,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "3": {
+                "id": 2,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "4": {
+                "id": 1,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "5": {
+                "id": 5,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "6": {
+                "id": 7,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "7": {
+                "id": 6,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "8": {
+                "id": 8,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "9": {
+                "id": 2,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "10": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "11": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "12": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "13": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "14": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "15": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "16": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "17": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "18": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "19": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "20": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "21": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "22": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "23": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "24": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "25": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "26": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "27": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "28": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "29": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "30": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            }
+        }
+    },
+    "player2": {
+        "name": "BabyBurrito",
+        "mulligan": false,
+        "health": 20,
+        "faeria": 5,
+        "hand": [1,2,3,0,4,5,6,7,8],
+        "deck": [9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30],
+        "cards": {
+            "0": {
+                "id": 0,
+                "type": 0,
+                "faeria_cost": 0,
+                "land_cost": {"forest": 0, "desert": 0, "mountain": 0, "lake": 0, "wild": 0},
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "1": {
+                "id": 1,
+                "type": 0,
+                "faeria_cost": 0,
+                "land_cost": {"forest": 0, "desert": 0, "mountain": 0, "lake": 0, "wild": 0},
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "2": {
+                "id": 5,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "3": {
+                "id": 2,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "4": {
+                "id": 4,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "5": {
+                "id": 3,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "6": {
+                "id": 6,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "7": {
+                "id": 7,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "8": {
+                "id": 9,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "9": {
+                "id": 1,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "10": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "11": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "12": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "13": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "14": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "15": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "16": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "17": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "18": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "19": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "20": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "21": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "22": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "23": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "24": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "25": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "26": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "27": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "28": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "29": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            },
+            "30": {
+                "id": 0,
+                "type": 0,
+                "faeria": 0,
+                "attack": 0,
+                "health": 0,
+                "effects": []
+            }
+        }
+    }
+}

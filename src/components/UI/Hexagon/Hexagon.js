@@ -1,11 +1,6 @@
 import React from "react";
-import { useStore } from "../../../../hooks-store/store";
-import "./Tile.css";
 
-const Tile = (props) => {
-  const [state, dispatch] = useStore();
-  const user = 'player1';
-
+const Hexagon = (props) => {
   const hexSize = props.hexSize;
   const startPosX = props.startPosX;
   const startPosY = props.startPosY;
@@ -18,14 +13,12 @@ const Tile = (props) => {
     [startPosX, startPosY + Math.sqrt(3) * hexSize * 0.5].join(),
   ].join(" ");
 
-  const tileHandler = () => {
-    if (state.tiles[props.id].selectable) {
-      const payload = {player: user, tile_id: props.id}
-      dispatch("BUILD_TILE", payload);
-    }
-  };
-
-  return <polygon className={props.type} points={points} onClick={tileHandler} />;
+  return (
+    <polygon
+      className={props.className}
+      points={points}
+    />
+  );
 };
 
-export default Tile;
+export default Hexagon;

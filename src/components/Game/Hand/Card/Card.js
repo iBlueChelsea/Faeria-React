@@ -1,11 +1,15 @@
-import React from 'react';
+import React, {useState} from 'react';
+import images from '../../../../assets/images/cards/images';
+import './Card.css';
 
-const card = () => {
+const Card = (props) => {
+    const [card,setCard] = useState(props.data);
+
     return (
-        <div style={{ borderStyle: "solid", borderWidth: "3px", width: "120px", height: "160px"}}>
-            Card
+        <div className={props.classname} onClick={props.clickAction}>
+            <img id={props.index} src={images[card.id]} width={props.width} height={props.height}></img>
         </div>
     );
 }
 
-export default card;
+export default Card;
