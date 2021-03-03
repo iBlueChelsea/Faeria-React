@@ -28,7 +28,7 @@ const WheelButton = (props) => {
           dispatch('PLUS_FAERIA', user);
           break;
         default:
-          dispatch('SELECT_LAND', props.id);
+          dispatch('SELECT_LAND', {player: user, wheelbutton_id: props.id});
       }
     }
   }

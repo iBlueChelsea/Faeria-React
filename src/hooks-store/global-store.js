@@ -66,26 +66,53 @@ const configureStore = () => {
       updatedState.data[data.player].mulligan = false;
       return updatedState;
     },
-    SELECT_LAND: (currentState, wheelbutton_id) => {
+    SELECT_LAND: (currentState, data) => {
       const updatedState = JSON.parse(JSON.stringify(currentState));
       const newWheelState = updatedState.wheelbuttons;
-      newWheelState[wheelbutton_id].selected = !newWheelState[wheelbutton_id]
-        .selected;
+      newWheelState[data.wheelbutton_id].selected = !newWheelState[
+        data.wheelbutton_id
+      ].selected;
       Object.keys(newWheelState).forEach((key) => {
-        if (key !== wheelbutton_id) {
+        if (key !== data.wheelbutton_id) {
           newWheelState[key].selectable = !newWheelState[key].selectable;
         }
       });
       updatedState.wheelbuttons = newWheelState;
+      const newTileState = updatedState.tiles;
+      const anyAdjacent = (tile) =>
+        updatedState.data.board.tiles[tile].owner === data.player;
+      const god_key = Object.keys(updatedState.gods).filter(
+        (god) => updatedState.gods[god].player === data.player
+      );
+      if (updatedState.wheelbuttons[data.wheelbutton_id].selected) {
+        Object.keys(newTileState).forEach((key) => {
+          let tileType = updatedState.data.board.tiles[key].type;
+          let tileOwner = updatedState.data.board.tiles[key].owner;
+          if (
+            tileType === "none" ||
+            (tileType === "prairie" && tileOwner === data.player)
+          ) {
+            if (
+              newTileState[key].adjacent.some(anyAdjacent) ||
+              updatedState.gods[god_key].adjacent.includes(key)
+            ) {
+              newTileState[key].selectable = true;
+            }
+          }
+        });
+      } else {
+        Object.keys(newTileState).forEach((key) => {
+          newTileState[key].selectable = false;
+        });
+      }
+      updatedState.tiles = newTileState;
       return updatedState;
     },
     DRAW_CARD: (currentState, player) => {
       const updatedState = JSON.parse(JSON.stringify(currentState));
-      console.log(updatedState.data[player].deck);
-      console.log(updatedState.data[player].hand);
-      updatedState.data[player].hand.push(updatedState.data[player].deck.splice(0,1)[0]);
-      console.log(updatedState.data[player].deck);
-      console.log(updatedState.data[player].hand);
+      updatedState.data[player].hand.push(
+        updatedState.data[player].deck.splice(0, 1)[0]
+      );
       updatedState.wheel.used_wheel = true;
       return updatedState;
     },
@@ -97,9 +124,7 @@ const configureStore = () => {
     },
     BUILD_TILE: (currentState, data) => {
       const updatedState = JSON.parse(JSON.stringify(currentState));
-      updatedState.tiles[data.tile_id].selected = !updatedState.tiles[data.tile_id]
-        .selected;
-      let type = 'none';
+      let type = "none";
       Object.values(updatedState.wheelbuttons).forEach((wheelbutton) => {
         if (wheelbutton.selected) {
           type = wheelbutton.action;
@@ -107,6 +132,16 @@ const configureStore = () => {
       });
       updatedState.data.board.tiles[data.tile_id].type = type;
       updatedState.data.board.tiles[data.tile_id].owner = data.player;
+      const wheelbutton_id = Object.keys(updatedState.wheelbuttons).filter(
+        (key) => updatedState.wheelbuttons[key].selected
+      );
+      updatedState.wheelbuttons[wheelbutton_id].selected = false;
+      Object.keys(updatedState.wheelbuttons).forEach((key) => {
+        updatedState.wheelbuttons[key].selectable = true;
+      });
+      Object.keys(updatedState.tiles).forEach((key) => {
+        updatedState.tiles[key].selectable = false;
+      });
       updatedState.wheel.used_wheel = true;
       return updatedState;
     },
@@ -176,138 +211,173 @@ const configureStore = () => {
     },
     tiles: {
       A1: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["A2", "B2", "B3"],
       },
       A2: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["A1", "B3", "B4"],
       },
       B1: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["B2", "C1", "C2"],
       },
       B2: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["A1", "B1", "B3", "C2", "C3"],
       },
       B3: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["A1", "A2", "B2", "B4", "C3", "C4"],
       },
       B4: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["A2", "B3", "B5", "C4", "C5"],
       },
       B5: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["B4", "C5", "C6"],
       },
       C1: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["B1", "C2", "D1"],
       },
       C2: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["B1", "B2", "C1", "C3", "D1", "D2"],
       },
       C3: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["B2", "B3", "C2", "C4", "D2", "D3"],
       },
       C4: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["B3", "B4", "C3", "C5", "D3", "D4"],
       },
       C5: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["B4", "B5", "C4", "C6", "D4", "D5"],
       },
       C6: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["B5", "C5", "D5"],
       },
       D1: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["C1", "C2", "D2", "E1", "E2"],
       },
       D2: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["C2", "C3", "D1", "D3", "E2", "E3"],
       },
       D3: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["C3", "C4", "D2", "D4", "E3", "E4"],
       },
       D4: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["C4", "C5", "D3", "D5", "E4", "E5"],
       },
       D5: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["C5", "C6", "D4", "E5", "E6"],
       },
       E1: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["D1", "E2", "F1"],
       },
       E2: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["D1", "D2", "E1", "E3", "F1", "F2"],
       },
       E3: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["D2", "D3", "E2", "E4", "F2", "F3"],
       },
       E4: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["D3", "D4", "E3", "E5", "F3", "F4"],
       },
       E5: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["D4", "D5", "E4", "E6", "F4", "F5"],
       },
       E6: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["D5", "E5", "F5"],
       },
       F1: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["E1", "E2", "F2"],
       },
       F2: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["E2", "E3", "F1", "F3", "G1"],
       },
       F3: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["E3", "E4", "F2", "F4", "G1", "G2"],
       },
       F4: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["E4", "E5", "F3", "F5", "G2"],
       },
       F5: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["E5", "E6", "F4"],
       },
       G1: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["F2", "F3", "G2"],
       },
       G2: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        adjacent: ["F3", "F4", "G1"],
       },
     },
     gods: {
       D0: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        player: "player2",
+        adjacent: ["C1", "D1", "E1"],
       },
       D6: {
-        selectable: true,
+        selectable: false,
         selected: false,
+        player: "player1",
+        adjacent: ["C6", "D5", "E6"],
       },
     },
     data: {

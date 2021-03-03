@@ -5,6 +5,7 @@ import "./Tile.css";
 const Tile = (props) => {
   const [state, dispatch] = useStore();
   const user = 'player1';
+  const extraclass = (state.tiles[props.id].selectable) ? 'tile-selectable' : 'tile-not-selectable';
 
   const hexSize = props.hexSize;
   const startPosX = props.startPosX;
@@ -25,7 +26,7 @@ const Tile = (props) => {
     }
   };
 
-  return <polygon className={props.type} points={points} onClick={tileHandler} />;
+  return <polygon className={props.type + ' ' + extraclass} points={points} onClick={tileHandler} />;
 };
 
 export default Tile;

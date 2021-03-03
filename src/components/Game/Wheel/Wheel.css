@@ -2,46 +2,54 @@
     fill: #5bb21b;
     stroke: #00FA9A;
     stroke-width: 3px;
+    cursor: pointer;
 }
 
 .wheel-A2 {
     fill: #0091e5;
     stroke: #00FA9A;
     stroke-width: 3px;
+    cursor: pointer;
 }
 
 .wheel-B1 {
     fill: #cf3201;
     stroke: #00FA9A;
     stroke-width: 3px;
+    cursor: pointer;
 }
 
 .wheel-B2 {
     fill: #baa79e;
     stroke: #00FA9A;
     stroke-width: 3px;
+    cursor: pointer;
 }
 
 .wheel-B3 {
     fill: #2F4F4F;
     stroke: #00FA9A;
     stroke-width: 3px;
+    cursor: pointer;
 }
 
 .wheel-C1 {
     fill: #e5a018;
     stroke: #00FA9A;
     stroke-width: 3px;
+    cursor: pointer;
 }
 
 .wheel-C2 {
     fill: #2F4F4F;
     stroke: #00FA9A;
     stroke-width: 3px;
+    cursor: pointer;
 }
 
 .not-selectable {
     fill: #2F4F4F;
     stroke: #00FA9A;
     stroke-width: 3px;
+    cursor: not-allowed;
 }

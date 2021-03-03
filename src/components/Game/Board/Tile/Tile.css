@@ -63,3 +63,11 @@
     fill: #00FFFF;
     stroke-width: 3px;
 }
+
+.tile-selectable {
+    cursor: pointer;
+}
+
+.tile-not-selectable {
+    cursor: not-allowed;
+}
