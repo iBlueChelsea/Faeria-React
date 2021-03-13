@@ -3,7 +3,6 @@ import Board from "./Board/Board";
 import Hand from "./Hand/Hand";
 import Wheel from "./Wheel/Wheel";
 import Infobox from "../UI/Infobox/Infobox";
-import react_state from "../../assets/json/react_state.json";
 import MulliganModal from "../UI/MulliganModal/MulliganModal";
 import {useStore} from "../../hooks-store/store";
 

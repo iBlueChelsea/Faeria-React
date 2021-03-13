@@ -4,9 +4,10 @@ import {useStore} from '../../../hooks-store/store';
 
 const EndTurnButton = (props) => {
   const [state,dispatch] = useStore();
+  const user = 'player1';
 
   const endTurnHandler = () => {
-    dispatch('END_TURN');
+    dispatch('END_TURN',user);
   }
 
   return (

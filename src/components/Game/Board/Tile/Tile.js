@@ -1,5 +1,6 @@
 import React from "react";
 import { useStore } from "../../../../hooks-store/store";
+import Occupant from "./Occupant/Occupant";
 import "./Tile.css";
 
 const Tile = (props) => {
@@ -21,12 +22,22 @@ const Tile = (props) => {
 
   const tileHandler = () => {
     if (state.tiles[props.id].selectable) {
-      const payload = {player: user, tile_id: props.id}
-      dispatch("BUILD_TILE", payload);
+      if (state.currentAction === 'summon_creature') {
+        const payload = {player: user, tile_id: props.id}
+        dispatch("SUMMON_CREATURE", payload);
+      } else {
+        const payload = {player: user, tile_id: props.id}
+        dispatch("BUILD_TILE", payload);
+      }
     }
   };
 
-  return <polygon className={props.type + ' ' + extraclass} points={points} onClick={tileHandler} />;
+  return (
+  <React.Fragment>
+    <polygon className={props.type + ' ' + extraclass} points={points} onClick={tileHandler} />
+    <Occupant tile={props.id} x={startPosX + hexSize * 0.5} y={parseInt(startPosY)+9}/>
+  </React.Fragment>
+  );
 };
 
 export default Tile;

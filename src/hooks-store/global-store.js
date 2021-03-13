@@ -10,6 +10,7 @@ const configureStore = () => {
     },
     SHUFFLE_DECK: (currentState, player) => {
       const updatedState = JSON.parse(JSON.stringify(currentState));
+      updatedState.currentAction = "mulligan";
       const shuffledDeck = [];
       for (let i = 0; i < currentState.data[player].deck.length; i++) {
         let random = Math.floor(
@@ -24,6 +25,7 @@ const configureStore = () => {
     },
     CONFIRM_MULLIGAN: (currentState, data) => {
       const updatedState = JSON.parse(JSON.stringify(currentState));
+      updatedState.currentAction = "";
       const prevHand = updatedState.data[data.player].deck.slice(0, 3);
       const cardsToReplace = [];
       const newHand = [];
@@ -77,6 +79,15 @@ const configureStore = () => {
           newWheelState[key].selectable = !newWheelState[key].selectable;
         }
       });
+      if (newWheelState[data.wheelbutton_id].selected) {
+        Object.keys(updatedState.hand).forEach((key) => {
+          updatedState.hand[key].selectable = false;
+        });
+      } else {
+        Object.keys(updatedState.hand).forEach((key) => {
+          updatedState.hand[key].selectable = true;
+        });
+      }
       updatedState.wheelbuttons = newWheelState;
       const newTileState = updatedState.tiles;
       const anyAdjacent = (tile) =>
@@ -142,11 +153,140 @@ const configureStore = () => {
       Object.keys(updatedState.tiles).forEach((key) => {
         updatedState.tiles[key].selectable = false;
       });
+      Object.keys(updatedState.hand).forEach((key) => {
+        updatedState.hand[key].selectable = true;
+      });
       updatedState.wheel.used_wheel = true;
       return updatedState;
     },
-    END_TURN: (currentState) => {
+    SELECT_CARD: (currentState, data) => {
       const updatedState = JSON.parse(JSON.stringify(currentState));
+      const newHand = updatedState.hand;
+      newHand[data.hand_id].selected = !newHand[data.hand_id].selected;
+      Object.keys(newHand).forEach((key) => {
+        if (parseInt(key) !== data.hand_id) {
+          newHand[key].selectable = !newHand[key].selectable;
+        }
+      });
+      updatedState.hand = newHand;
+      Object.keys(updatedState.wheelbuttons).forEach((key) => {
+        if (newHand[data.hand_id].selected) {
+          updatedState.wheelbuttons[key].selectable = false;
+        } else {
+          updatedState.wheelbuttons[key].selectable = true;
+        }
+      });
+      const getLands = () => {
+        let lands = { forest: 0, lake: 0, mountain: 0, desert: 0 };
+        Object.values(updatedState.data.board.tiles).forEach((tile) => {
+          if (tile.owner === data.player && tile.type !== "prairie") {
+            lands[tile.type] += 1;
+          }
+        });
+        return lands;
+      };
+      const lands = getLands();
+      const getLandTypes = () => {
+        return Object.keys(
+          updatedState.data[data.player].cards[data.card_id].land_cost
+        ).filter(
+          (key) =>
+            updatedState.data[data.player].cards[data.card_id].land_cost[key] >
+              0 && key !== "wild"
+        );
+      };
+      const landtypes = getLandTypes();
+      const requirementsMet = (tile) => {
+        let bool = true;
+        if (updatedState.data.board.tiles[tile].owner !== data.player) {
+          bool = false;
+        }
+        if (!landtypes.includes(updatedState.data.board.tiles[tile].type)) {
+          bool = false;
+        }
+        Object.keys(
+          updatedState.data[data.player].cards[data.card_id].land_cost
+        ).forEach((key) => {
+          if (key !== "wild") {
+            if (
+              updatedState.data[data.player].cards[data.card_id].land_cost[
+                key
+              ] > lands[key]
+            ) {
+              bool = false;
+            }
+          } else {
+            if (
+              updatedState.data[data.player].cards[data.card_id].land_cost[
+                key
+              ] >
+              Object.values(lands).reduce(
+                (sum, currentValue) => sum + currentValue
+              )
+            ) {
+              bool = false;
+            }
+          }
+        });
+        return bool;
+      };
+      if (newHand[data.hand_id].selected) {
+        updatedState.currentAction = "summon_creature";
+        Object.keys(updatedState.tiles).forEach((key) => {
+          if (requirementsMet(key)) {
+            updatedState.tiles[key].selectable = true;
+          }
+        });
+      } else {
+        updatedState.currentAction = "";
+        Object.keys(updatedState.tiles).forEach((key) => {
+          updatedState.tiles[key].selectable = false;
+        });
+      }
+      return updatedState;
+    },
+    SUMMON_CREATURE: (currentState, data) => {
+      const updatedState = JSON.parse(JSON.stringify(currentState));
+      const newOccupant = updatedState.data.board.tiles[data.tile_id].occupant;
+      newOccupant.player = data.player;
+      const selected_card_id = parseInt(
+        Object.keys(updatedState.hand).filter(
+          (key) => updatedState.hand[key].selected
+        )[0]
+      );
+      const card =
+        updatedState.data[data.player].cards[
+          updatedState.data[data.player].hand[selected_card_id - 1]
+        ];
+      newOccupant.id = card.id;
+      newOccupant.attack = card.attack;
+      newOccupant.health = card.health;
+      updatedState.data.board.tiles[data.tile_id].occupant = newOccupant;
+      Object.keys(updatedState.tiles).forEach((key) => {
+        updatedState.tiles[key].selectable = false;
+      });
+      const newHand = updatedState.hand;
+      newHand[selected_card_id].selected = !newHand[selected_card_id].selected;
+      Object.keys(newHand).forEach((key) => {
+        newHand[key].selectable = true;
+      });
+      updatedState.hand = newHand;
+      Object.keys(updatedState.wheelbuttons).forEach((key) => {
+        updatedState.wheelbuttons[key].selectable = true;
+      });
+      updatedState.currentAction = "";
+      updatedState.data[data.player].faeria -=
+        updatedState.data[data.player].cards[
+          updatedState.data[data.player].hand[selected_card_id - 1]
+        ].faeria_cost;
+      updatedState.data[data.player].hand.splice(selected_card_id - 1, 1);
+      return updatedState;
+    },
+    END_TURN: (currentState,player) => {
+      const updatedState = JSON.parse(JSON.stringify(currentState));
+      //TEMP
+      updatedState.data[player].faeria += 3;
+      //TEMP
       updatedState.wheel.used_wheel = false;
       updatedState.wheel.ended_turn = true;
       return updatedState;
@@ -196,15 +336,39 @@ const configureStore = () => {
       },
     },
     hand: {
-      0: {
-        selectable: true,
-        selected: false,
-      },
       1: {
         selectable: true,
         selected: false,
       },
       2: {
+        selectable: true,
+        selected: false,
+      },
+      3: {
+        selectable: true,
+        selected: false,
+      },
+      4: {
+        selectable: true,
+        selected: false,
+      },
+      5: {
+        selectable: true,
+        selected: false,
+      },
+      6: {
+        selectable: true,
+        selected: false,
+      },
+      7: {
+        selectable: true,
+        selected: false,
+      },
+      8: {
+        selectable: true,
+        selected: false,
+      },
+      9: {
         selectable: true,
         selected: false,
       },
@@ -862,243 +1026,272 @@ const configureStore = () => {
         cards: {
           1: {
             id: 1,
-            type: 0,
-            faeria_cost: 0,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
-            attack: 0,
-            health: 0,
+            type: "creature",
+            faeria_cost: 4,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
+            attack: 2,
+            health: 3,
             effects: [],
           },
           2: {
             id: 1,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
+            type: "creature",
+            faeria_cost: 4,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
+            attack: 2,
+            health: 3,
             effects: [],
           },
           3: {
             id: 1,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
+            type: "creature",
+            faeria_cost: 4,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
+            attack: 2,
+            health: 3,
             effects: [],
           },
           4: {
             id: 2,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
+            type: "creature",
+            faeria_cost: 5,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
+            attack: 3,
+            health: 6,
             effects: [],
           },
           5: {
             id: 2,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
+            type: "creature",
+            faeria_cost: 5,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
+            attack: 3,
+            health: 6,
             effects: [],
           },
           6: {
             id: 2,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
+            type: "creature",
+            faeria_cost: 5,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
+            attack: 3,
+            health: 6,
             effects: [],
           },
           7: {
             id: 3,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
+            type: "creature",
+            faeria_cost: 3,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
+            attack: 1,
+            health: 3,
             effects: [],
           },
           8: {
             id: 3,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
+            type: "creature",
+            faeria_cost: 3,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
+            attack: 1,
+            health: 3,
             effects: [],
           },
           9: {
             id: 3,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
+            type: "creature",
+            faeria_cost: 3,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
+            attack: 1,
+            health: 3,
             effects: [],
           },
           10: {
             id: 4,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
+            type: "creature",
+            faeria_cost: 4,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
+            attack: 3,
+            health: 3,
             effects: [],
           },
           11: {
             id: 4,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
+            type: "creature",
+            faeria_cost: 4,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
+            attack: 3,
+            health: 3,
             effects: [],
           },
           12: {
             id: 4,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
+            type: "creature",
+            faeria_cost: 4,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
+            attack: 3,
+            health: 3,
             effects: [],
           },
           13: {
             id: 5,
-            type: 0,
-            faeria: 0,
+            type: "event",
+            faeria_cost: 3,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 0,
             health: 0,
             effects: [],
           },
           14: {
             id: 5,
-            type: 0,
-            faeria: 0,
+            type: "event",
+            faeria_cost: 3,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 0,
             health: 0,
             effects: [],
           },
           15: {
             id: 5,
-            type: 0,
-            faeria: 0,
+            type: "event",
+            faeria_cost: 3,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 0,
             health: 0,
             effects: [],
           },
           16: {
             id: 6,
-            type: 0,
-            faeria: 0,
+            type: "event",
+            faeria_cost: 3,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 0,
             health: 0,
             effects: [],
           },
           17: {
             id: 6,
-            type: 0,
-            faeria: 0,
+            type: "event",
+            faeria_cost: 3,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 0,
             health: 0,
             effects: [],
           },
           18: {
             id: 6,
-            type: 0,
-            faeria: 0,
+            type: "event",
+            faeria_cost: 3,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 0,
             health: 0,
             effects: [],
           },
           19: {
             id: 7,
-            type: 0,
-            faeria: 0,
+            type: "event",
+            faeria_cost: 3,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 0,
             health: 0,
             effects: [],
           },
           20: {
             id: 7,
-            type: 0,
-            faeria: 0,
+            type: "event",
+            faeria_cost: 3,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 0,
             health: 0,
             effects: [],
           },
           21: {
             id: 7,
-            type: 0,
-            faeria: 0,
+            type: "event",
+            faeria_cost: 3,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 0,
             health: 0,
             effects: [],
           },
           22: {
             id: 8,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
+            type: "creature",
+            faeria_cost: 5,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
+            attack: 5,
+            health: 5,
             effects: [],
           },
           23: {
             id: 8,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
+            type: "creature",
+            faeria_cost: 5,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
+            attack: 5,
+            health: 5,
             effects: [],
           },
           24: {
             id: 8,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
+            type: "creature",
+            faeria_cost: 5,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
+            attack: 5,
+            health: 5,
             effects: [],
           },
           25: {
             id: 9,
-            type: 0,
-            faeria: 0,
+            type: "event",
+            faeria_cost: 6,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 4, wild: 0 },
             attack: 0,
             health: 0,
             effects: [],
           },
           26: {
             id: 9,
-            type: 0,
-            faeria: 0,
+            type: "event",
+            faeria_cost: 6,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 4, wild: 0 },
             attack: 0,
             health: 0,
             effects: [],
           },
           27: {
             id: 9,
-            type: 0,
-            faeria: 0,
+            type: "event",
+            faeria_cost: 6,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 4, wild: 0 },
             attack: 0,
             health: 0,
             effects: [],
           },
           28: {
             id: 10,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
+            type: "creature",
+            faeria_cost: 1,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 1, wild: 0 },
+            attack: 1,
+            health: 1,
             effects: [],
           },
           29: {
             id: 10,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
+            type: "creature",
+            faeria_cost: 1,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 1, wild: 0 },
+            attack: 1,
+            health: 1,
             effects: [],
           },
           30: {
             id: 10,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
+            type: "creature",
+            faeria_cost: 1,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 1, wild: 0 },
+            attack: 1,
+            health: 1,
             effects: [],
           },
         },
