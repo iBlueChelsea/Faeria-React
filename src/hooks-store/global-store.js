@@ -83,9 +83,15 @@ const configureStore = () => {
         Object.keys(updatedState.hand).forEach((key) => {
           updatedState.hand[key].selectable = false;
         });
+        Object.keys(updatedState.tiles).forEach((key) => {
+          updatedState.tiles[key].occupantSelectable = false;
+        });
       } else {
         Object.keys(updatedState.hand).forEach((key) => {
           updatedState.hand[key].selectable = true;
+        });
+        Object.keys(updatedState.tiles).forEach((key) => {
+          updatedState.tiles[key].occupantSelectable = true;
         });
       }
       updatedState.wheelbuttons = newWheelState;
@@ -121,9 +127,13 @@ const configureStore = () => {
     },
     DRAW_CARD: (currentState, player) => {
       const updatedState = JSON.parse(JSON.stringify(currentState));
-      updatedState.data[player].hand.push(
-        updatedState.data[player].deck.splice(0, 1)[0]
-      );
+      if (updatedState.data[player].hand.length < 9) {
+        updatedState.data[player].hand.push(
+          updatedState.data[player].deck.splice(0, 1)[0]
+        );
+      } else {
+        updatedState.data[player].deck.splice(0, 1);
+      }
       updatedState.wheel.used_wheel = true;
       return updatedState;
     },
@@ -152,6 +162,7 @@ const configureStore = () => {
       });
       Object.keys(updatedState.tiles).forEach((key) => {
         updatedState.tiles[key].selectable = false;
+        updatedState.tiles[key].occupantSelectable = true;
       });
       Object.keys(updatedState.hand).forEach((key) => {
         updatedState.hand[key].selectable = true;
@@ -174,6 +185,13 @@ const configureStore = () => {
           updatedState.wheelbuttons[key].selectable = false;
         } else {
           updatedState.wheelbuttons[key].selectable = true;
+        }
+      });
+      Object.keys(updatedState.tiles).forEach((key) => {
+        if (newHand[data.hand_id].selected) {
+          updatedState.tiles[key].occupantSelectable = false;
+        } else {
+          updatedState.tiles[key].occupantSelectable = true;
         }
       });
       const getLands = () => {
@@ -199,6 +217,9 @@ const configureStore = () => {
       const requirementsMet = (tile) => {
         let bool = true;
         if (updatedState.data.board.tiles[tile].owner !== data.player) {
+          bool = false;
+        }
+        if (updatedState.data.board.tiles[tile].occupant.player) {
           bool = false;
         }
         if (!landtypes.includes(updatedState.data.board.tiles[tile].type)) {
@@ -261,9 +282,14 @@ const configureStore = () => {
       newOccupant.id = card.id;
       newOccupant.attack = card.attack;
       newOccupant.health = card.health;
+      newOccupant.movement = card.movement;
+      newOccupant.ranged = card.ranged;
+      newOccupant.hasMoved = true;
+      newOccupant.hasAttacked = true;
       updatedState.data.board.tiles[data.tile_id].occupant = newOccupant;
       Object.keys(updatedState.tiles).forEach((key) => {
         updatedState.tiles[key].selectable = false;
+        updatedState.tiles[key].occupantSelectable = true;
       });
       const newHand = updatedState.hand;
       newHand[selected_card_id].selected = !newHand[selected_card_id].selected;
@@ -282,13 +308,201 @@ const configureStore = () => {
       updatedState.data[data.player].hand.splice(selected_card_id - 1, 1);
       return updatedState;
     },
-    END_TURN: (currentState,player) => {
+    SELECT_OCCUPANT: (currentState, data) => {
       const updatedState = JSON.parse(JSON.stringify(currentState));
-      //TEMP
-      updatedState.data[player].faeria += 3;
-      //TEMP
+      updatedState.tiles[data.tile_id].occupantSelected = !updatedState.tiles[
+        data.tile_id
+      ].occupantSelected;
+      const moveRequirementsMet = (tile_id) => {
+        let bool = true;
+        const movementRange =
+          updatedState.data.board.tiles[data.tile_id].occupant.movement.range;
+        if (!updatedState.tiles[data.tile_id].adjacent.includes(tile_id)) {
+          bool = false;
+        }
+        if (updatedState.data.board.tiles[tile_id].occupant.player) {
+          bool = false;
+        }
+        if (updatedState.data.board.tiles[data.tile_id].occupant.hasMoved) {
+          bool = false;
+        }
+        if (updatedState.data.board.tiles[tile_id].type === "none") {
+          bool = false;
+        }
+        return bool;
+      };
+      const attackRequirementsMet = (tile_id) => {
+        let bool = true;
+        if (!updatedState.tiles[data.tile_id].adjacent.includes(tile_id)) {
+          bool = false;
+        }
+        if (
+          !updatedState.data.board.tiles[tile_id].occupant.player ||
+          updatedState.data.board.tiles[tile_id].occupant.player === data.player
+        ) {
+          bool = false;
+        }
+        if (updatedState.data.board.tiles[data.tile_id].occupant.hasAttacked) {
+          bool = false;
+        }
+        return bool;
+      };
+      if (updatedState.tiles[data.tile_id].occupantSelected) {
+        Object.keys(updatedState.wheelbuttons).forEach((key) => {
+          updatedState.wheelbuttons[key].selectable = false;
+        });
+        Object.keys(updatedState.hand).forEach((key) => {
+          updatedState.hand[key].selectable = false;
+        });
+        Object.keys(updatedState.tiles).forEach((key) => {
+          if (moveRequirementsMet(key)) {
+            updatedState.tiles[key].selectable = true;
+          }
+          if (attackRequirementsMet(key)) {
+            updatedState.tiles[key].occupantSelectable = true;
+          } else if (data.tile_id !== key) {
+            updatedState.tiles[key].occupantSelectable = false;
+          }
+        });
+        updatedState.currentAction = "occupant_selected";
+      } else {
+        Object.keys(updatedState.wheelbuttons).forEach((key) => {
+          updatedState.wheelbuttons[key].selectable = true;
+        });
+        Object.keys(updatedState.hand).forEach((key) => {
+          updatedState.hand[key].selectable = true;
+        });
+        Object.keys(updatedState.tiles).forEach((key) => {
+          updatedState.tiles[key].selectable = false;
+          updatedState.tiles[key].occupantSelectable = true;
+        });
+        updatedState.currentAction = "";
+      }
+      return updatedState;
+    },
+    MOVE_OCCUPANT: (currentState, data) => {
+      const updatedState = JSON.parse(JSON.stringify(currentState));
+      const selected_tile_id = Object.keys(updatedState.tiles).filter(
+        (key) => updatedState.tiles[key].occupantSelected
+      )[0];
+      updatedState.data.board.tiles[data.tile_id].occupant =
+        updatedState.data.board.tiles[selected_tile_id].occupant;
+      updatedState.data.board.tiles[data.tile_id].occupant.hasMoved = true;
+      const removeOccupant = {
+        player: "",
+        id: 0,
+        health: 0,
+        attack: 0,
+        movement: {
+          range: 1,
+          special: {
+            aquatic: false,
+            flying: false,
+            jump: false,
+          },
+        },
+        ranged: false,
+        hasMoved: false,
+        hasAttacked: false,
+        effectUsed: false,
+      };
+      updatedState.data.board.tiles[selected_tile_id].occupant = removeOccupant;
+      Object.keys(updatedState.wheelbuttons).forEach((key) => {
+        updatedState.wheelbuttons[key].selectable = true;
+      });
+      Object.keys(updatedState.hand).forEach((key) => {
+        updatedState.hand[key].selectable = true;
+      });
+      Object.keys(updatedState.tiles).forEach((key) => {
+        updatedState.tiles[key].selectable = false;
+        updatedState.tiles[key].occupantSelectable = true;
+      });
+      updatedState.tiles[selected_tile_id].occupantSelected = false;
+      Object.keys(updatedState.data.board.wells).forEach((key) => {
+        if (
+          updatedState.data.board.wells[key].adjacent.includes(data.tile_id) &&
+          updatedState.data.board.wells[key].available
+        ) {
+          updatedState.data.board.wells[key].available = false;
+          updatedState.data.board.wells[key].collected = true;
+          updatedState.data[data.player].faeria += 1;
+        }
+      });
+      updatedState.currentAction = "";
+      return updatedState;
+    },
+    ATTACK_OCCUPANT: (currentState, data) => {
+      const updatedState = JSON.parse(JSON.stringify(currentState));
+      const selected_occupant_id = Object.keys(updatedState.tiles).filter(
+        (key) => updatedState.tiles[key].occupantSelected
+      )[0];
+      const attacker =
+        updatedState.data.board.tiles[selected_occupant_id].occupant;
+      const defender = updatedState.data.board.tiles[data.tile_id].occupant;
+      const removeOccupant = {
+        player: "",
+        id: 0,
+        health: 0,
+        attack: 0,
+        movement: {
+          range: 1,
+          special: {
+            aquatic: false,
+            flying: false,
+            jump: false,
+          },
+        },
+        ranged: false,
+        hasMoved: false,
+        hasAttacked: false,
+        effectUsed: false,
+      };
+      attacker.health -= defender.attack;
+      defender.health -= attacker.attack;
+      attacker.hasAttacked = true;
+      updatedState.data.board.tiles[selected_occupant_id].occupant = (attacker.health > 0) ? attacker : removeOccupant;
+      updatedState.data.board.tiles[data.tile_id].occupant = (defender.health > 0) ? defender : removeOccupant;
+      Object.keys(updatedState.wheelbuttons).forEach((key) => {
+        updatedState.wheelbuttons[key].selectable = true;
+      });
+      Object.keys(updatedState.hand).forEach((key) => {
+        updatedState.hand[key].selectable = true;
+      });
+      Object.keys(updatedState.tiles).forEach((key) => {
+        updatedState.tiles[key].selectable = false;
+        updatedState.tiles[key].occupantSelectable = true;
+      });
+      updatedState.tiles[selected_occupant_id].occupantSelected = false;
+      return updatedState;
+    },
+    END_TURN: (currentState, player) => {
+      const updatedState = JSON.parse(JSON.stringify(currentState));
       updatedState.wheel.used_wheel = false;
-      updatedState.wheel.ended_turn = true;
+      updatedState.data[player].faeria += 3;
+      const anyAdjacent = (tile) =>
+        updatedState.data.board.tiles[tile].occupant.player === player;
+      Object.keys(updatedState.data.board.wells).forEach((key) => {
+        if (updatedState.data.board.wells[key].adjacent.some(anyAdjacent)) {
+          updatedState.data.board.wells[key].available = false;
+          updatedState.data.board.wells[key].collected = true;
+          updatedState.data[player].faeria += 1;
+        } else {
+          updatedState.data.board.wells[key].available = true;
+          updatedState.data.board.wells[key].collected = false;
+        }
+      });
+      if (updatedState.data[player].hand.length < 9) {
+        updatedState.data[player].hand.push(
+          updatedState.data[player].deck.splice(0, 1)[0]
+        );
+      } else {
+        updatedState.data[player].deck.splice(0, 1);
+      }
+      Object.keys(updatedState.data.board.tiles).forEach((key) => {
+        updatedState.data.board.tiles[key].occupant.hasMoved = false;
+        updatedState.data.board.tiles[key].occupant.hasAttacked = false;
+      });
+      updatedState.data.status.turn += 1;
       return updatedState;
     },
   };
@@ -296,7 +510,6 @@ const configureStore = () => {
     currentAction: "",
     wheel: {
       used_wheel: false,
-      ended_turn: false,
     },
     wheelbuttons: {
       "wheel-A1": {
@@ -377,156 +590,218 @@ const configureStore = () => {
       A1: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["A2", "B2", "B3"],
       },
       A2: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["A1", "B3", "B4"],
       },
       B1: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["B2", "C1", "C2"],
       },
       B2: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["A1", "B1", "B3", "C2", "C3"],
       },
       B3: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["A1", "A2", "B2", "B4", "C3", "C4"],
       },
       B4: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["A2", "B3", "B5", "C4", "C5"],
       },
       B5: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["B4", "C5", "C6"],
       },
       C1: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["B1", "C2", "D1"],
       },
       C2: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["B1", "B2", "C1", "C3", "D1", "D2"],
       },
       C3: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["B2", "B3", "C2", "C4", "D2", "D3"],
       },
       C4: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["B3", "B4", "C3", "C5", "D3", "D4"],
       },
       C5: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["B4", "B5", "C4", "C6", "D4", "D5"],
       },
       C6: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["B5", "C5", "D5"],
       },
       D1: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["C1", "C2", "D2", "E1", "E2"],
       },
       D2: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["C2", "C3", "D1", "D3", "E2", "E3"],
       },
       D3: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["C3", "C4", "D2", "D4", "E3", "E4"],
       },
       D4: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["C4", "C5", "D3", "D5", "E4", "E5"],
       },
       D5: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["C5", "C6", "D4", "E5", "E6"],
       },
       E1: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["D1", "E2", "F1"],
       },
       E2: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["D1", "D2", "E1", "E3", "F1", "F2"],
       },
       E3: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["D2", "D3", "E2", "E4", "F2", "F3"],
       },
       E4: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["D3", "D4", "E3", "E5", "F3", "F4"],
       },
       E5: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["D4", "D5", "E4", "E6", "F4", "F5"],
       },
       E6: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["D5", "E5", "F5"],
       },
       F1: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["E1", "E2", "F2"],
       },
       F2: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["E2", "E3", "F1", "F3", "G1"],
       },
       F3: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["E3", "E4", "F2", "F4", "G1", "G2"],
       },
       F4: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["E4", "E5", "F3", "F5", "G2"],
       },
       F5: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["E5", "E6", "F4"],
       },
       G1: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["F2", "F3", "G2"],
       },
       G2: {
         selectable: false,
         selected: false,
+        occupantSelectable: true,
+        occupantSelected: false,
         adjacent: ["F3", "F4", "G1"],
       },
     },
@@ -547,7 +822,7 @@ const configureStore = () => {
     data: {
       status: {
         finished: false,
-        turn: 0,
+        turn: 1,
         current: "player1",
       },
       board: {
@@ -555,18 +830,22 @@ const configureStore = () => {
           A0: {
             available: true,
             collected: false,
+            adjacent: ["A1", "B1", "B2"],
           },
           A3: {
             available: true,
             collected: false,
+            adjacent: ["A2", "B4", "B5"],
           },
           G0: {
             available: true,
             collected: false,
+            adjacent: ["G1", "F1", "F2"],
           },
           G3: {
             available: true,
             collected: false,
+            adjacent: ["G2", "F4", "F5"],
           },
         },
         tiles: {
@@ -578,6 +857,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -591,6 +879,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -604,6 +901,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -617,6 +923,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -630,6 +945,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -643,6 +967,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -656,6 +989,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -669,6 +1011,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -682,6 +1033,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -695,6 +1055,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -708,6 +1077,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -721,6 +1099,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -734,6 +1121,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -747,6 +1143,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -760,6 +1165,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -773,6 +1187,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -786,6 +1209,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -799,6 +1231,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -812,6 +1253,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -825,6 +1275,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -838,6 +1297,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -851,6 +1319,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -864,6 +1341,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -877,6 +1363,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -890,6 +1385,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -903,6 +1407,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -916,6 +1429,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -929,6 +1451,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -942,19 +1473,37 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
             },
           },
           G1: {
-            type: "none",
-            owner: "",
+            type: "lake",
+            owner: "player2",
             occupant: {
-              player: "player1",
-              id: 0,
-              health: 0,
-              attack: 0,
+              player: "player2",
+              id: 10,
+              health: 1,
+              attack: 1,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -968,6 +1517,15 @@ const configureStore = () => {
               id: 0,
               health: 0,
               attack: 0,
+              movement: {
+                range: 1,
+                special: {
+                  aquatic: false,
+                  flying: false,
+                  jump: false,
+                },
+              },
+              ranged: false,
               hasMoved: false,
               hasAttacked: false,
               effectUsed: false,
@@ -1031,6 +1589,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 2,
             health: 3,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           2: {
@@ -1040,6 +1607,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 2,
             health: 3,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           3: {
@@ -1049,6 +1625,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 2,
             health: 3,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           4: {
@@ -1058,6 +1643,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
             attack: 3,
             health: 6,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           5: {
@@ -1067,6 +1661,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
             attack: 3,
             health: 6,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           6: {
@@ -1076,6 +1679,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
             attack: 3,
             health: 6,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           7: {
@@ -1085,6 +1697,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 1,
             health: 3,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           8: {
@@ -1094,6 +1715,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 1,
             health: 3,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           9: {
@@ -1103,6 +1733,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 1,
             health: 3,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           10: {
@@ -1112,6 +1751,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
             attack: 3,
             health: 3,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           11: {
@@ -1121,6 +1769,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
             attack: 3,
             health: 3,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           12: {
@@ -1130,6 +1787,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
             attack: 3,
             health: 3,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           13: {
@@ -1139,6 +1805,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 0,
             health: 0,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           14: {
@@ -1148,6 +1823,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 0,
             health: 0,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           15: {
@@ -1157,6 +1841,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 0,
             health: 0,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           16: {
@@ -1166,6 +1859,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 0,
             health: 0,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           17: {
@@ -1175,6 +1877,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 0,
             health: 0,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           18: {
@@ -1184,6 +1895,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 0,
             health: 0,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           19: {
@@ -1193,6 +1913,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 0,
             health: 0,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           20: {
@@ -1202,6 +1931,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 0,
             health: 0,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           21: {
@@ -1211,6 +1949,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 0,
             health: 0,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           22: {
@@ -1220,6 +1967,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
             attack: 5,
             health: 5,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           23: {
@@ -1229,6 +1985,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
             attack: 5,
             health: 5,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           24: {
@@ -1238,6 +2003,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
             attack: 5,
             health: 5,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           25: {
@@ -1247,6 +2021,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 4, wild: 0 },
             attack: 0,
             health: 0,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           26: {
@@ -1256,6 +2039,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 4, wild: 0 },
             attack: 0,
             health: 0,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           27: {
@@ -1265,6 +2057,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 4, wild: 0 },
             attack: 0,
             health: 0,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           28: {
@@ -1274,6 +2075,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 1, wild: 0 },
             attack: 1,
             health: 1,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           29: {
@@ -1283,6 +2093,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 1, wild: 0 },
             attack: 1,
             health: 1,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
           30: {
@@ -1292,6 +2111,15 @@ const configureStore = () => {
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 1, wild: 0 },
             attack: 1,
             health: 1,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
         },
@@ -1579,10 +2407,20 @@ const configureStore = () => {
           },
           30: {
             id: 10,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
+            type: "creature",
+            faeria_cost: 1,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 1, wild: 0 },
+            attack: 1,
+            health: 1,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
             effects: [],
           },
         },

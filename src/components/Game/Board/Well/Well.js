@@ -1,17 +1,15 @@
-import React, {useState} from "react";
+import React from "react";
+import "./Well.css";
 
 const Well = (props) => {
-  const [available, setAvailable] = useState(props.data.available);
-  const [collected, setCollected] = useState(props.data.collected);
+  const wellClass = (props.data.collected) ? 'well-collected' : 'well-available';
 
   return (
     <circle
       cx={props.cx}
       cy={props.cy}
       r={props.r}
-      stroke="#00bae8"
-      strokeWidth="15"
-      fill="#E0FFFF"
+      className={wellClass}
     />
   );
 };

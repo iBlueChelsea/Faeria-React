@@ -7,10 +7,34 @@ const Occupant = (props) => {
   const [state, dispatch] = useStore();
   const user = "player1";
 
-  const occupantHandler = () => {};
+  const occupantClass =
+    state.data.board.tiles[props.tile].occupant.player === user
+      ? state.tiles[props.tile].occupantSelectable
+        ? "friendly-selectable"
+        : "friendly"
+      : state.tiles[props.tile].occupantSelectable
+      ? "enemy-selectable"
+      : "enemy";
+  const creatureClass =
+    state.data.board.tiles[props.tile].occupant.player === user
+      ? state.tiles[props.tile].occupantSelected
+        ? "creature-selected"
+        : "creature"
+      : "creature-enemy";
+
+  const occupantHandler = () => {
+    if (state.tiles[props.tile].occupantSelectable) {
+      const payload = { player: user, tile_id: props.tile };
+      if (state.data.board.tiles[props.tile].occupant.player === user) {
+        dispatch("SELECT_OCCUPANT", payload);
+      } else if (state.currentAction === "occupant_selected") {
+        dispatch("ATTACK_OCCUPANT", payload);
+      }
+    }
+  };
 
   const occupant = (
-    <React.Fragment>
+    <g className={occupantClass} onClick={occupantHandler}>
       <defs>
         <pattern
           id={"creature-image" + props.tile}
@@ -34,9 +58,8 @@ const Occupant = (props) => {
         ry="5"
         width="50"
         height="70"
-        className="creature"
+        className={creatureClass}
         fill={"url(#creature-image" + props.tile + ")"}
-        onClick={occupantHandler}
       />
 
       <rect
@@ -64,7 +87,7 @@ const Occupant = (props) => {
       <text x={props.x + 40} y={props.y + 59} dy=".3em" className="health-text">
         {state.data.board.tiles[props.tile].occupant.health}
       </text>
-    </React.Fragment>
+    </g>
   );
 
   return state.data.board.tiles[props.tile].occupant.id > 0 ? occupant : null;

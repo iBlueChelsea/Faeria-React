@@ -1,0 +1,11 @@
+.well-available {
+    stroke: #00bae8;
+    stroke-width: 15;
+    fill: #9fffff;
+}
+
+.well-collected {
+    stroke: #96b6be;
+    stroke-width: 15;
+    fill: #b3cacf;
+}

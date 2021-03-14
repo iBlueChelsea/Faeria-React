@@ -1,5 +1,37 @@
+.friendly {
+    cursor: not-allowed;
+}
+
+.friendly-selectable {
+    cursor: pointer;
+}
+
+.enemy {
+    cursor: not-allowed;
+}
+
+.enemy-selectable {
+    cursor: crosshair;
+}
+
 .creature {
-    stroke:black;
+    stroke:rgb(211, 211, 211);
+    stroke-width: 3px;
+}
+
+.creature-selected {
+    stroke: rgba(255, 254, 197, 0.849);
+    stroke-width: 5px;
+}
+
+.creature-enemy {
+    stroke:rgb(51, 51, 51);
+    stroke-width: 3px;
+}
+
+.creature-enemy:hover {
+    stroke:rgb(212, 10, 10);
+    stroke-width: 5px;
 }
 
 .attack {

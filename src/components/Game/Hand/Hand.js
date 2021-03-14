@@ -6,7 +6,6 @@ const Hand = (props) => {
   const [state, dispatch] = useStore();
 
   const cards = props.data.hand.map((id, index) => {
-    console.log(state.hand[index + 1].selected);
     const cardClass = state.hand[index + 1].selected ? "-selected" : "";
     return (
       <Card
