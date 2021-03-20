@@ -313,39 +313,213 @@ const configureStore = () => {
       updatedState.tiles[data.tile_id].occupantSelected = !updatedState.tiles[
         data.tile_id
       ].occupantSelected;
-      const moveRequirementsMet = (tile_id) => {
-        let bool = true;
-        const movementRange =
-          updatedState.data.board.tiles[data.tile_id].occupant.movement.range;
-        if (!updatedState.tiles[data.tile_id].adjacent.includes(tile_id)) {
-          bool = false;
+      const jumpTiles = [];
+      if (
+        updatedState.data.board.tiles[data.tile_id].occupant.movement.special
+          .jump
+      ) {
+        updatedState.tiles[data.tile_id].adjacent.forEach((tile) => {
+          if (!jumpTiles.includes(tile) && tile !== data.tile_id) {
+            jumpTiles.push(tile);
+          }
+          updatedState.tiles[tile].adjacent.forEach((adjacent_tile) => {
+            if (
+              !jumpTiles.includes(adjacent_tile) &&
+              adjacent_tile !== data.tile_id
+            ) {
+              jumpTiles.push(adjacent_tile);
+            }
+          });
+        });
+      }
+      const movementRange =
+        updatedState.data.board.tiles[data.tile_id].occupant.movement.range;
+      const rangeTiles = [];
+      const rangeTilesHelper = {};
+      for (let i = 1; i <= movementRange; i++) {
+        if (i === 1) {
+          rangeTilesHelper[i] = {};
+          updatedState.tiles[data.tile_id].adjacent.forEach((tile) => {
+            let valid = true;
+            if (
+              updatedState.data.board.tiles[data.tile_id].occupant.movement
+                .special.aquatic &&
+              !updatedState.data.board.tiles[data.tile_id].occupant.movement
+                .special.flying
+            ) {
+              if (
+                updatedState.data.board.tiles[tile].type !== "lake" &&
+                updatedState.data.board.tiles[tile].type !== "none"
+              ) {
+                valid = false;
+              }
+            }
+            if (
+              !updatedState.data.board.tiles[data.tile_id].occupant.movement
+                .special.aquatic &&
+              !updatedState.data.board.tiles[data.tile_id].occupant.movement
+                .special.flying
+            ) {
+              if (updatedState.data.board.tiles[tile].type === "none") {
+                valid = false;
+              }
+            }
+            if (valid && !updatedState.data.board.tiles[tile].occupant.player) {
+              rangeTiles.push(tile);
+              rangeTilesHelper[i][tile] = {
+                prevTile: data.tile_id,
+                currentTile: tile,
+              };
+            }
+          });
+        } else {
+          rangeTilesHelper[i] = {};
+          Object.values(rangeTilesHelper[i - 1]).forEach((rangetile) => {
+            updatedState.tiles[rangetile.currentTile].adjacent
+              .filter(
+                (rangetile_key) =>
+                  !updatedState.tiles[rangetile.prevTile].adjacent.includes(
+                    rangetile_key
+                  ) && rangetile_key !== rangetile.prevTile
+              )
+              .forEach((rangetile_adj) => {
+                let valid = true;
+                updatedState.tiles[rangetile_adj].adjacent
+                  .filter(
+                    (rangetile_adj_key) =>
+                      rangetile_adj_key !== rangetile.currentTile
+                  )
+                  .forEach((rangetile_adj_adj) => {
+                    if (
+                      updatedState.tiles[rangetile_adj_adj].adjacent.includes(
+                        rangetile.prevTile
+                      )
+                    ) {
+                      valid = false;
+                    }
+                  });
+                if (updatedState.tiles[rangetile_adj].adjacentNonTile) {
+                  if (
+                    updatedState.tiles[rangetile_adj].adjacentNonTile.includes(
+                      "D"
+                    )
+                  ) {
+                    if (
+                      updatedState.gods[
+                        updatedState.tiles[rangetile_adj].adjacentNonTile
+                      ].adjacent.includes(rangetile.prevTile)
+                    ) {
+                      valid = false;
+                    }
+                  } else {
+                    if (
+                      updatedState.data.board.wells[
+                        updatedState.tiles[rangetile_adj].adjacentNonTile
+                      ].adjacent.includes(rangetile.prevTile)
+                    ) {
+                      valid = false;
+                    }
+                  }
+                }
+                if (
+                  updatedState.data.board.tiles[data.tile_id].occupant.movement
+                    .special.aquatic &&
+                  !updatedState.data.board.tiles[data.tile_id].occupant.movement
+                    .special.flying
+                ) {
+                  if (
+                    updatedState.data.board.tiles[rangetile_adj].type !==
+                      "lake" &&
+                    updatedState.data.board.tiles[rangetile_adj].type !== "none"
+                  ) {
+                    valid = false;
+                  }
+                }
+                if (
+                  !updatedState.data.board.tiles[data.tile_id].occupant.movement
+                    .special.aquatic &&
+                  !updatedState.data.board.tiles[data.tile_id].occupant.movement
+                    .special.flying
+                ) {
+                  if (
+                    updatedState.data.board.tiles[rangetile_adj].type === "none"
+                  ) {
+                    valid = false;
+                  }
+                }
+                if (
+                  valid &&
+                  !rangeTiles.includes(rangetile_adj) &&
+                  !updatedState.data.board.tiles[rangetile_adj].occupant.player
+                ) {
+                  rangeTiles.push(rangetile_adj);
+                  rangeTilesHelper[i][rangetile_adj] = {
+                    prevTile: rangetile.currentTile,
+                    currentTile: rangetile_adj,
+                  };
+                }
+              });
+          });
         }
+      }
+      const moveRequirementsMet = (tile_id) => {
         if (updatedState.data.board.tiles[tile_id].occupant.player) {
-          bool = false;
+          return false;
         }
         if (updatedState.data.board.tiles[data.tile_id].occupant.hasMoved) {
-          bool = false;
+          return false;
         }
-        if (updatedState.data.board.tiles[tile_id].type === "none") {
-          bool = false;
+        if (
+          updatedState.data.board.tiles[data.tile_id].occupant.movement.special
+            .jump
+        ) {
+          if (!jumpTiles.includes(tile_id) && !rangeTiles.includes(tile_id)) {
+            return false;
+          }
+        } else {
+          if (!rangeTiles.includes(tile_id)) {
+            return false;
+          }
         }
-        return bool;
+        if (
+          !updatedState.data.board.tiles[data.tile_id].occupant.movement.special
+            .aquatic &&
+          !updatedState.data.board.tiles[data.tile_id].occupant.movement.special
+            .flying
+        ) {
+          if (updatedState.data.board.tiles[tile_id].type === "none") {
+            return false;
+          }
+        }
+        if (
+          updatedState.data.board.tiles[data.tile_id].occupant.movement.special
+            .aquatic &&
+          !updatedState.data.board.tiles[data.tile_id].occupant.movement.special
+            .flying
+        ) {
+          if (
+            updatedState.data.board.tiles[tile_id].type !== "lake" &&
+            updatedState.data.board.tiles[tile_id].type !== "none"
+          ) {
+            return false;
+          }
+        }
+        return true;
       };
       const attackRequirementsMet = (tile_id) => {
-        let bool = true;
         if (!updatedState.tiles[data.tile_id].adjacent.includes(tile_id)) {
-          bool = false;
+          return false;
         }
         if (
           !updatedState.data.board.tiles[tile_id].occupant.player ||
           updatedState.data.board.tiles[tile_id].occupant.player === data.player
         ) {
-          bool = false;
+          return false;
         }
         if (updatedState.data.board.tiles[data.tile_id].occupant.hasAttacked) {
-          bool = false;
+          return false;
         }
-        return bool;
+        return true;
       };
       if (updatedState.tiles[data.tile_id].occupantSelected) {
         Object.keys(updatedState.wheelbuttons).forEach((key) => {
@@ -460,8 +634,10 @@ const configureStore = () => {
       attacker.health -= defender.attack;
       defender.health -= attacker.attack;
       attacker.hasAttacked = true;
-      updatedState.data.board.tiles[selected_occupant_id].occupant = (attacker.health > 0) ? attacker : removeOccupant;
-      updatedState.data.board.tiles[data.tile_id].occupant = (defender.health > 0) ? defender : removeOccupant;
+      updatedState.data.board.tiles[selected_occupant_id].occupant =
+        attacker.health > 0 ? attacker : removeOccupant;
+      updatedState.data.board.tiles[data.tile_id].occupant =
+        defender.health > 0 ? defender : removeOccupant;
       Object.keys(updatedState.wheelbuttons).forEach((key) => {
         updatedState.wheelbuttons[key].selectable = true;
       });
@@ -473,6 +649,7 @@ const configureStore = () => {
         updatedState.tiles[key].occupantSelectable = true;
       });
       updatedState.tiles[selected_occupant_id].occupantSelected = false;
+      updatedState.currentAction = "";
       return updatedState;
     },
     END_TURN: (currentState, player) => {
@@ -593,6 +770,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["A2", "B2", "B3"],
+        adjacentNonTile: "A0",
       },
       A2: {
         selectable: false,
@@ -600,6 +778,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["A1", "B3", "B4"],
+        adjacentNonTile: "A3",
       },
       B1: {
         selectable: false,
@@ -607,6 +786,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["B2", "C1", "C2"],
+        adjacentNonTile: "A0",
       },
       B2: {
         selectable: false,
@@ -614,6 +794,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["A1", "B1", "B3", "C2", "C3"],
+        adjacentNonTile: "A0",
       },
       B3: {
         selectable: false,
@@ -621,6 +802,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["A1", "A2", "B2", "B4", "C3", "C4"],
+        adjacentNonTile: null,
       },
       B4: {
         selectable: false,
@@ -628,6 +810,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["A2", "B3", "B5", "C4", "C5"],
+        adjacentNonTile: "A3",
       },
       B5: {
         selectable: false,
@@ -635,6 +818,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["B4", "C5", "C6"],
+        adjacentNonTile: "A3",
       },
       C1: {
         selectable: false,
@@ -642,6 +826,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["B1", "C2", "D1"],
+        adjacentNonTile: "D0",
       },
       C2: {
         selectable: false,
@@ -649,6 +834,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["B1", "B2", "C1", "C3", "D1", "D2"],
+        adjacentNonTile: null,
       },
       C3: {
         selectable: false,
@@ -656,6 +842,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["B2", "B3", "C2", "C4", "D2", "D3"],
+        adjacentNonTile: null,
       },
       C4: {
         selectable: false,
@@ -663,6 +850,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["B3", "B4", "C3", "C5", "D3", "D4"],
+        adjacentNonTile: null,
       },
       C5: {
         selectable: false,
@@ -670,6 +858,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["B4", "B5", "C4", "C6", "D4", "D5"],
+        adjacentNonTile: null,
       },
       C6: {
         selectable: false,
@@ -677,6 +866,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["B5", "C5", "D5"],
+        adjacentNonTile: "D6",
       },
       D1: {
         selectable: false,
@@ -684,6 +874,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["C1", "C2", "D2", "E1", "E2"],
+        adjacentNonTile: "D0",
       },
       D2: {
         selectable: false,
@@ -691,6 +882,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["C2", "C3", "D1", "D3", "E2", "E3"],
+        adjacentNonTile: null,
       },
       D3: {
         selectable: false,
@@ -698,6 +890,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["C3", "C4", "D2", "D4", "E3", "E4"],
+        adjacentNonTile: null,
       },
       D4: {
         selectable: false,
@@ -705,6 +898,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["C4", "C5", "D3", "D5", "E4", "E5"],
+        adjacentNonTile: null,
       },
       D5: {
         selectable: false,
@@ -712,6 +906,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["C5", "C6", "D4", "E5", "E6"],
+        adjacentNonTile: null,
       },
       E1: {
         selectable: false,
@@ -719,6 +914,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["D1", "E2", "F1"],
+        adjacentNonTile: "D0",
       },
       E2: {
         selectable: false,
@@ -726,6 +922,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["D1", "D2", "E1", "E3", "F1", "F2"],
+        adjacentNonTile: null,
       },
       E3: {
         selectable: false,
@@ -733,6 +930,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["D2", "D3", "E2", "E4", "F2", "F3"],
+        adjacentNonTile: null,
       },
       E4: {
         selectable: false,
@@ -740,6 +938,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["D3", "D4", "E3", "E5", "F3", "F4"],
+        adjacentNonTile: null,
       },
       E5: {
         selectable: false,
@@ -747,6 +946,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["D4", "D5", "E4", "E6", "F4", "F5"],
+        adjacentNonTile: null,
       },
       E6: {
         selectable: false,
@@ -754,6 +954,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["D5", "E5", "F5"],
+        adjacentNonTile: "D6",
       },
       F1: {
         selectable: false,
@@ -761,6 +962,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["E1", "E2", "F2"],
+        adjacentNonTile: "G0",
       },
       F2: {
         selectable: false,
@@ -768,6 +970,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["E2", "E3", "F1", "F3", "G1"],
+        adjacentNonTile: "G0",
       },
       F3: {
         selectable: false,
@@ -775,6 +978,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["E3", "E4", "F2", "F4", "G1", "G2"],
+        adjacentNonTile: null,
       },
       F4: {
         selectable: false,
@@ -782,6 +986,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["E4", "E5", "F3", "F5", "G2"],
+        adjacentNonTile: "G3",
       },
       F5: {
         selectable: false,
@@ -789,6 +994,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["E5", "E6", "F4"],
+        adjacentNonTile: "G3",
       },
       G1: {
         selectable: false,
@@ -796,6 +1002,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["F2", "F3", "G2"],
+        adjacentNonTile: "G0",
       },
       G2: {
         selectable: false,
@@ -803,6 +1010,7 @@ const configureStore = () => {
         occupantSelectable: true,
         occupantSelected: false,
         adjacent: ["F3", "F4", "G1"],
+        adjacentNonTile: "G3",
       },
     },
     gods: {
@@ -1592,7 +1800,7 @@ const configureStore = () => {
             movement: {
               range: 1,
               special: {
-                aquatic: false,
+                aquatic: true,
                 flying: false,
                 jump: false,
               },
@@ -1610,7 +1818,7 @@ const configureStore = () => {
             movement: {
               range: 1,
               special: {
-                aquatic: false,
+                aquatic: true,
                 flying: false,
                 jump: false,
               },
@@ -1628,7 +1836,7 @@ const configureStore = () => {
             movement: {
               range: 1,
               special: {
-                aquatic: false,
+                aquatic: true,
                 flying: false,
                 jump: false,
               },
@@ -1648,7 +1856,7 @@ const configureStore = () => {
               special: {
                 aquatic: false,
                 flying: false,
-                jump: false,
+                jump: true,
               },
             },
             ranged: false,
@@ -1666,7 +1874,7 @@ const configureStore = () => {
               special: {
                 aquatic: false,
                 flying: false,
-                jump: false,
+                jump: true,
               },
             },
             ranged: false,
@@ -1684,7 +1892,7 @@ const configureStore = () => {
               special: {
                 aquatic: false,
                 flying: false,
-                jump: false,
+                jump: true,
               },
             },
             ranged: false,
@@ -1756,7 +1964,7 @@ const configureStore = () => {
               special: {
                 aquatic: false,
                 flying: false,
-                jump: false,
+                jump: true,
               },
             },
             ranged: false,
@@ -1774,7 +1982,7 @@ const configureStore = () => {
               special: {
                 aquatic: false,
                 flying: false,
-                jump: false,
+                jump: true,
               },
             },
             ranged: false,
@@ -1792,7 +2000,7 @@ const configureStore = () => {
               special: {
                 aquatic: false,
                 flying: false,
-                jump: false,
+                jump: true,
               },
             },
             ranged: false,
@@ -2078,7 +2286,7 @@ const configureStore = () => {
             movement: {
               range: 1,
               special: {
-                aquatic: false,
+                aquatic: true,
                 flying: false,
                 jump: false,
               },
@@ -2096,7 +2304,7 @@ const configureStore = () => {
             movement: {
               range: 1,
               special: {
-                aquatic: false,
+                aquatic: true,
                 flying: false,
                 jump: false,
               },
@@ -2114,7 +2322,7 @@ const configureStore = () => {
             movement: {
               range: 1,
               special: {
-                aquatic: false,
+                aquatic: true,
                 flying: false,
                 jump: false,
               },
