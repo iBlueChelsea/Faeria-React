@@ -1,0 +1,17 @@
+.god-selectable {
+    stroke: #A9A9A9;
+    stroke-width: 5;
+    fill: #E0FFFF;
+}
+
+.god-selectable :hover {
+    stroke: rgb(212, 10, 10);
+    cursor: crosshair;
+}
+
+.god-not-selectable {
+    stroke: #A9A9A9;
+    stroke-width: 5;
+    fill: #E0FFFF;
+    cursor: not-allowed;
+}

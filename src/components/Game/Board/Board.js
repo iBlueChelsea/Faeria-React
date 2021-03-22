@@ -73,7 +73,7 @@ const Board = (props) => {
       return (
         <God
           key={"god-" + column + godPositions[column][i]}
-          id={"god-" + column + godPositions[column][i]}
+          id={column + godPositions[column][i]}
           data={props.data.gods[column + godPositions[column][i]]}
           r={hexSize * 0.65}
           cx={

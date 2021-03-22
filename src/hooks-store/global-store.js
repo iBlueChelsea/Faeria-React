@@ -74,11 +74,13 @@ const configureStore = () => {
       newWheelState[data.wheelbutton_id].selected = !newWheelState[
         data.wheelbutton_id
       ].selected;
-      Object.keys(newWheelState).forEach((key) => {
-        if (key !== data.wheelbutton_id) {
-          newWheelState[key].selectable = !newWheelState[key].selectable;
-        }
-      });
+      if (updatedState.data[data.player].wheel_neutral_counter !== 1) {
+        Object.keys(newWheelState).forEach((key) => {
+          if (key !== data.wheelbutton_id) {
+            newWheelState[key].selectable = !newWheelState[key].selectable;
+          }
+        });
+      }
       if (newWheelState[data.wheelbutton_id].selected) {
         Object.keys(updatedState.hand).forEach((key) => {
           updatedState.hand[key].selectable = false;
@@ -98,6 +100,9 @@ const configureStore = () => {
       const newTileState = updatedState.tiles;
       const anyAdjacent = (tile) =>
         updatedState.data.board.tiles[tile].owner === data.player;
+      const anyAdjacentFromOccupant = (tile) =>
+        updatedState.data.board.tiles[tile].occupant.player === data.player &&
+        updatedState.data.board.tiles[tile].type !== "none";
       const god_key = Object.keys(updatedState.gods).filter(
         (god) => updatedState.gods[god].player === data.player
       );
@@ -111,9 +116,19 @@ const configureStore = () => {
           ) {
             if (
               newTileState[key].adjacent.some(anyAdjacent) ||
+              newTileState[key].adjacent.some(anyAdjacentFromOccupant) ||
               updatedState.gods[god_key].adjacent.includes(key)
             ) {
-              newTileState[key].selectable = true;
+              if (
+                !updatedState.data.board.tiles[key].occupant.movement.special
+                  .aquatic
+              ) {
+                newTileState[key].selectable = true;
+              } else if (
+                updatedState.wheelbuttons[data.wheelbutton_id].action === "lake"
+              ) {
+                newTileState[key].selectable = true;
+              }
             }
           }
         });
@@ -134,13 +149,13 @@ const configureStore = () => {
       } else {
         updatedState.data[player].deck.splice(0, 1);
       }
-      updatedState.wheel.used_wheel = true;
+      updatedState.data[player].wheel_used = true;
       return updatedState;
     },
     PLUS_FAERIA: (currentState, player) => {
       const updatedState = JSON.parse(JSON.stringify(currentState));
       updatedState.data[player].faeria++;
-      updatedState.wheel.used_wheel = true;
+      updatedState.data[player].wheel_used = true;
       return updatedState;
     },
     BUILD_TILE: (currentState, data) => {
@@ -157,9 +172,6 @@ const configureStore = () => {
         (key) => updatedState.wheelbuttons[key].selected
       );
       updatedState.wheelbuttons[wheelbutton_id].selected = false;
-      Object.keys(updatedState.wheelbuttons).forEach((key) => {
-        updatedState.wheelbuttons[key].selectable = true;
-      });
       Object.keys(updatedState.tiles).forEach((key) => {
         updatedState.tiles[key].selectable = false;
         updatedState.tiles[key].occupantSelectable = true;
@@ -167,7 +179,16 @@ const configureStore = () => {
       Object.keys(updatedState.hand).forEach((key) => {
         updatedState.hand[key].selectable = true;
       });
-      updatedState.wheel.used_wheel = true;
+      if (type === "prairie") {
+        updatedState.data[data.player].wheel_neutral_counter += 1;
+      }
+      if (updatedState.data[data.player].wheel_neutral_counter !== 1) {
+        Object.keys(updatedState.wheelbuttons).forEach((key) => {
+          updatedState.wheelbuttons[key].selectable = true;
+        });
+        updatedState.data[data.player].wheel_used = true;
+        updatedState.data[data.player].wheel_neutral_counter = 0;
+      }
       return updatedState;
     },
     SELECT_CARD: (currentState, data) => {
@@ -180,13 +201,21 @@ const configureStore = () => {
         }
       });
       updatedState.hand = newHand;
-      Object.keys(updatedState.wheelbuttons).forEach((key) => {
+      if (updatedState.data[data.player].wheel_neutral_counter !== 1) {
+        Object.keys(updatedState.wheelbuttons).forEach((key) => {
+          if (newHand[data.hand_id].selected) {
+            updatedState.wheelbuttons[key].selectable = false;
+          } else {
+            updatedState.wheelbuttons[key].selectable = true;
+          }
+        });
+      } else {
         if (newHand[data.hand_id].selected) {
-          updatedState.wheelbuttons[key].selectable = false;
+          updatedState.wheelbuttons["wheel-B2"].selectable = true;
         } else {
-          updatedState.wheelbuttons[key].selectable = true;
+          updatedState.wheelbuttons["wheel-B2"].selectable = true;
         }
-      });
+      }
       Object.keys(updatedState.tiles).forEach((key) => {
         if (newHand[data.hand_id].selected) {
           updatedState.tiles[key].occupantSelectable = false;
@@ -297,9 +326,13 @@ const configureStore = () => {
         newHand[key].selectable = true;
       });
       updatedState.hand = newHand;
-      Object.keys(updatedState.wheelbuttons).forEach((key) => {
-        updatedState.wheelbuttons[key].selectable = true;
-      });
+      if (updatedState.data[data.player].wheel_neutral_counter !== 1) {
+        Object.keys(updatedState.wheelbuttons).forEach((key) => {
+          updatedState.wheelbuttons[key].selectable = true;
+        });
+      } else {
+        updatedState.wheelbuttons["wheel-B2"].selectable = true;
+      }
       updatedState.currentAction = "";
       updatedState.data[data.player].faeria -=
         updatedState.data[data.player].cards[
@@ -462,6 +495,87 @@ const configureStore = () => {
           });
         }
       }
+      const rangeAttack = [];
+      const rangeAttackHelper = {};
+      if (updatedState.data.board.tiles[data.tile_id].occupant.ranged) {
+        for (let i = 1; i <= 5; i++) {
+          if (i === 1) {
+            rangeAttackHelper[i] = {};
+            updatedState.tiles[data.tile_id].adjacent.forEach((tile) => {
+              if (!updatedState.data.board.tiles[tile].occupant.player) {
+                rangeAttack.push(tile);
+                rangeAttackHelper[i][tile] = {
+                  prevTile: data.tile_id,
+                  currentTile: tile,
+                };
+              }
+            });
+          } else {
+            rangeAttackHelper[i] = {};
+            Object.values(rangeAttackHelper[i - 1]).forEach((rangetile) => {
+              updatedState.tiles[rangetile.currentTile].adjacent
+                .filter(
+                  (rangetile_key) =>
+                    !updatedState.tiles[rangetile.prevTile].adjacent.includes(
+                      rangetile_key
+                    ) && rangetile_key !== rangetile.prevTile
+                )
+                .forEach((rangetile_adj) => {
+                  let valid = true;
+                  updatedState.tiles[rangetile_adj].adjacent
+                    .filter(
+                      (rangetile_adj_key) =>
+                        rangetile_adj_key !== rangetile.currentTile
+                    )
+                    .forEach((rangetile_adj_adj) => {
+                      if (
+                        updatedState.tiles[rangetile_adj_adj].adjacent.includes(
+                          rangetile.prevTile
+                        )
+                      ) {
+                        valid = false;
+                      }
+                    });
+                  if (updatedState.tiles[rangetile_adj].adjacentNonTile) {
+                    if (
+                      updatedState.tiles[
+                        rangetile_adj
+                      ].adjacentNonTile.includes("D")
+                    ) {
+                      if (
+                        updatedState.gods[
+                          updatedState.tiles[rangetile_adj].adjacentNonTile
+                        ].adjacent.includes(rangetile.prevTile)
+                      ) {
+                        valid = false;
+                      }
+                    } else {
+                      if (
+                        updatedState.data.board.wells[
+                          updatedState.tiles[rangetile_adj].adjacentNonTile
+                        ].adjacent.includes(rangetile.prevTile)
+                      ) {
+                        valid = false;
+                      }
+                    }
+                  }
+                  if (
+                    valid &&
+                    !rangeAttack.includes(rangetile_adj) &&
+                    !updatedState.data.board.tiles[rangetile.currentTile]
+                      .occupant.player
+                  ) {
+                    rangeAttack.push(rangetile_adj);
+                    rangeAttackHelper[i][rangetile_adj] = {
+                      prevTile: rangetile.currentTile,
+                      currentTile: rangetile_adj,
+                    };
+                  }
+                });
+            });
+          }
+        }
+      }
       const moveRequirementsMet = (tile_id) => {
         if (updatedState.data.board.tiles[tile_id].occupant.player) {
           return false;
@@ -507,8 +621,16 @@ const configureStore = () => {
         return true;
       };
       const attackRequirementsMet = (tile_id) => {
-        if (!updatedState.tiles[data.tile_id].adjacent.includes(tile_id)) {
-          return false;
+        if (updatedState.data.board.tiles[data.tile_id].occupant.ranged) {
+          if (!rangeAttack.includes(tile_id)) {
+            if (!updatedState.tiles[data.tile_id].adjacent.includes(tile_id)) {
+              return false;
+            }
+          }
+        } else {
+          if (!updatedState.tiles[data.tile_id].adjacent.includes(tile_id)) {
+            return false;
+          }
         }
         if (
           !updatedState.data.board.tiles[tile_id].occupant.player ||
@@ -540,9 +662,13 @@ const configureStore = () => {
         });
         updatedState.currentAction = "occupant_selected";
       } else {
-        Object.keys(updatedState.wheelbuttons).forEach((key) => {
-          updatedState.wheelbuttons[key].selectable = true;
-        });
+        if (updatedState.data[data.player].wheel_neutral_counter !== 1) {
+          Object.keys(updatedState.wheelbuttons).forEach((key) => {
+            updatedState.wheelbuttons[key].selectable = true;
+          });
+        } else {
+          updatedState.wheelbuttons["wheel-B2"].selectable = true;
+        }
         Object.keys(updatedState.hand).forEach((key) => {
           updatedState.hand[key].selectable = true;
         });
@@ -551,6 +677,37 @@ const configureStore = () => {
           updatedState.tiles[key].occupantSelectable = true;
         });
         updatedState.currentAction = "";
+      }
+      const god = data.player === "player1" ? "D0" : "D6";
+      const rangeAttackArrayHelper =
+        data.player === "player1"
+          ? ["B1", "F1", "D2", "D3", "D4", "D5"]
+          : ["B5", "F5", "D1", "D2", "D3", "D4"];
+      if (updatedState.tiles[data.tile_id].occupantSelected) {
+        if (!updatedState.data.board.tiles[data.tile_id].occupant.hasAttacked) {
+          if (
+            updatedState.data.board.tiles[data.tile_id].occupant.ranged &&
+            !updatedState.gods[god].adjacent.includes(data.tile_id)
+          ) {
+            const rangeAttackArray = rangeAttack.filter((attacktile) =>
+              updatedState.gods[god].adjacent.includes(attacktile)
+            );
+            if (
+              rangeAttackArray.length === 1 &&
+              !updatedState.data.board.tiles[rangeAttackArray[0]].occupant
+                .player &&
+              rangeAttackArrayHelper.includes(data.tile_id)
+            ) {
+              updatedState.gods[god].selectable = true;
+            }
+          } else {
+            if (updatedState.gods[god].adjacent.includes(data.tile_id)) {
+              updatedState.gods[god].selectable = true;
+            }
+          }
+        }
+      } else {
+        updatedState.gods[god].selectable = false;
       }
       return updatedState;
     },
@@ -562,6 +719,9 @@ const configureStore = () => {
       updatedState.data.board.tiles[data.tile_id].occupant =
         updatedState.data.board.tiles[selected_tile_id].occupant;
       updatedState.data.board.tiles[data.tile_id].occupant.hasMoved = true;
+      if (updatedState.data.board.tiles[data.tile_id].occupant.ranged) {
+        updatedState.data.board.tiles[data.tile_id].occupant.hasAttacked = true;
+      }
       const removeOccupant = {
         player: "",
         id: 0,
@@ -581,9 +741,13 @@ const configureStore = () => {
         effectUsed: false,
       };
       updatedState.data.board.tiles[selected_tile_id].occupant = removeOccupant;
-      Object.keys(updatedState.wheelbuttons).forEach((key) => {
-        updatedState.wheelbuttons[key].selectable = true;
-      });
+      if (updatedState.data[data.player].wheel_neutral_counter !== 1) {
+        Object.keys(updatedState.wheelbuttons).forEach((key) => {
+          updatedState.wheelbuttons[key].selectable = true;
+        });
+      } else {
+        updatedState.wheelbuttons["wheel-B2"].selectable = true;
+      }
       Object.keys(updatedState.hand).forEach((key) => {
         updatedState.hand[key].selectable = true;
       });
@@ -631,16 +795,25 @@ const configureStore = () => {
         hasAttacked: false,
         effectUsed: false,
       };
-      attacker.health -= defender.attack;
+      if (
+        updatedState.tiles[data.tile_id].adjacent.includes(selected_occupant_id)
+      ) {
+        attacker.health -= defender.attack;
+      }
       defender.health -= attacker.attack;
       attacker.hasAttacked = true;
+      attacker.hasMoved = true;
       updatedState.data.board.tiles[selected_occupant_id].occupant =
         attacker.health > 0 ? attacker : removeOccupant;
       updatedState.data.board.tiles[data.tile_id].occupant =
         defender.health > 0 ? defender : removeOccupant;
-      Object.keys(updatedState.wheelbuttons).forEach((key) => {
-        updatedState.wheelbuttons[key].selectable = true;
-      });
+      if (updatedState.data[data.player].wheel_neutral_counter !== 1) {
+        Object.keys(updatedState.wheelbuttons).forEach((key) => {
+          updatedState.wheelbuttons[key].selectable = true;
+        });
+      } else {
+        updatedState.wheelbuttons["wheel-B2"].selectable = true;
+      }
       Object.keys(updatedState.hand).forEach((key) => {
         updatedState.hand[key].selectable = true;
       });
@@ -652,9 +825,43 @@ const configureStore = () => {
       updatedState.currentAction = "";
       return updatedState;
     },
+    ATTACK_GOD: (currentState, data) => {
+      const updatedState = JSON.parse(JSON.stringify(currentState));
+      const selected_occupant_id = Object.keys(updatedState.tiles).filter(
+        (key) => updatedState.tiles[key].occupantSelected
+      )[0];
+      const attacker =
+        updatedState.data.board.tiles[selected_occupant_id].occupant;
+      updatedState.data.board.gods[data.god].health -= attacker.attack;
+      updatedState.data.board.gods[data.god].wasHit = true;
+      attacker.hasAttacked = true;
+      attacker.hasMoved = true;
+      updatedState.gods[data.god].selectable = false;
+      if (updatedState.data[data.player].wheel_neutral_counter !== 1) {
+        Object.keys(updatedState.wheelbuttons).forEach((key) => {
+          updatedState.wheelbuttons[key].selectable = true;
+        });
+      } else {
+        updatedState.wheelbuttons["wheel-B2"].selectable = true;
+      }
+      Object.keys(updatedState.hand).forEach((key) => {
+        updatedState.hand[key].selectable = true;
+      });
+      Object.keys(updatedState.tiles).forEach((key) => {
+        updatedState.tiles[key].selectable = false;
+        updatedState.tiles[key].occupantSelectable = true;
+      });
+      updatedState.tiles[selected_occupant_id].occupantSelected = false;
+      updatedState.currentAction = "";
+      if (updatedState.data.board.gods[data.god].health <= 0) {
+        updatedState.data.status.finished = true;
+        updatedState.data.status.winner = data.player;
+      }
+      return updatedState;
+    },
     END_TURN: (currentState, player) => {
       const updatedState = JSON.parse(JSON.stringify(currentState));
-      updatedState.wheel.used_wheel = false;
+      updatedState.data[player].wheel_used = false;
       updatedState.data[player].faeria += 3;
       const anyAdjacent = (tile) =>
         updatedState.data.board.tiles[tile].occupant.player === player;
@@ -685,9 +892,6 @@ const configureStore = () => {
   };
   initStore(actions, {
     currentAction: "",
-    wheel: {
-      used_wheel: false,
-    },
     wheelbuttons: {
       "wheel-A1": {
         selectable: true,
@@ -1016,13 +1220,11 @@ const configureStore = () => {
     gods: {
       D0: {
         selectable: false,
-        selected: false,
         player: "player2",
         adjacent: ["C1", "D1", "E1"],
       },
       D6: {
         selectable: false,
-        selected: false,
         player: "player1",
         adjacent: ["C6", "D5", "E6"],
       },
@@ -1030,6 +1232,7 @@ const configureStore = () => {
     data: {
       status: {
         finished: false,
+        winner: "",
         turn: 1,
         current: "player1",
       },
@@ -1718,13 +1921,13 @@ const configureStore = () => {
             },
           },
           G2: {
-            type: "none",
-            owner: "",
+            type: "lake",
+            owner: "player2",
             occupant: {
-              player: "",
-              id: 0,
-              health: 0,
-              attack: 0,
+              player: "player2",
+              id: 2,
+              health: 6,
+              attack: 3,
               movement: {
                 range: 1,
                 special: {
@@ -1754,6 +1957,8 @@ const configureStore = () => {
       player1: {
         name: "BabyBlue",
         mulligan: true,
+        wheel_used: false,
+        wheel_neutral_counter: 0,
         health: 20,
         faeria: 3,
         hand: [],
@@ -2335,6 +2540,8 @@ const configureStore = () => {
       player2: {
         name: "BabyBurrito",
         mulligan: true,
+        wheel_used: false,
+        wheel_neutral_counter: 0,
         health: 20,
         faeria: 3,
         hand: [],

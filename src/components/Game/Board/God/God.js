@@ -1,20 +1,27 @@
-import React, {useState} from "react";
+import React from "react";
+import { useStore } from "../../../../hooks-store/store";
+import "./God.css";
 
 const God = (props) => {
-  const [health,setHealth] = useState(props.data.health);
-  const [wasHit,setWasHit] = useState(props.data.wasHit);
+  const [state, dispatch] = useStore();
+  const user = 'player1';
+  const selectable = (state.gods[props.id].selectable) ? 'god-selectable' : 'god-not-selectable';
+
+  const godHandler = () => {
+    if (state.gods[props.id].selectable) {
+      const payload = {god: props.id, player: user}
+      dispatch('ATTACK_GOD',payload);
+    }
+  };
 
   return (
-    <g>
+    <g className={selectable} onClick={godHandler}>
     <circle
       cx={props.cx}
       cy={props.cy}
       r={props.r}
-      stroke="#A9A9A9"
-      strokeWidth="5"
-      fill="#E0FFFF"
     />
-    <text x={props.cx} y={props.cy} textAnchor="middle" stroke="#8B0000" strokeWidth="4px" fontSize="40px" dy=".3em">20</text>
+    <text x={props.cx} y={props.cy} textAnchor="middle" stroke="#8B0000" strokeWidth="4px" fontSize="40px" dy=".3em">{props.data.health}</text>
     </g>
   );
 };

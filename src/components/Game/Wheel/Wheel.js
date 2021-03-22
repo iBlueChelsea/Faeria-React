@@ -7,6 +7,8 @@ import {useStore} from '../../../hooks-store/store';
 const Wheel = (props) => {
   const [state,dispatch] = useStore();
 
+  const user = 'player1';
+
   const hexSize = 40;
   const boardTilesMap = { A: 2, B: 3, C: 2 };
   const boardMaxHeight = 3;
@@ -42,7 +44,7 @@ const Wheel = (props) => {
     });
   });
 
-  const wheelOutput = (!state.wheel.used_wheel) ? wheel : <EndTurnButton />;
+  const wheelOutput = (!state.data[user].wheel_used) ? wheel : <EndTurnButton />;
 
   return (
     <div
