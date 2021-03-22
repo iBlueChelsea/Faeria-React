@@ -25,10 +25,14 @@ const Occupant = (props) => {
   const occupantHandler = () => {
     if (state.tiles[props.tile].occupantSelectable) {
       const payload = { player: user, tile_id: props.tile };
-      if (state.data.board.tiles[props.tile].occupant.player === user) {
-        dispatch("SELECT_OCCUPANT", payload);
-      } else if (state.currentAction === "occupant_selected") {
-        dispatch("ATTACK_OCCUPANT", payload);
+      if (state.currentAction === "event_occupant") {
+        dispatch("PROCESS_EVENT_OCCUPANT", payload);
+      } else {
+        if (state.data.board.tiles[props.tile].occupant.player === user) {
+          dispatch("SELECT_OCCUPANT", payload);
+        } else if (state.currentAction === "occupant_selected") {
+          dispatch("ATTACK_OCCUPANT", payload);
+        }
       }
     }
   };

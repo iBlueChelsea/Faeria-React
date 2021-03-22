@@ -19,8 +19,13 @@
     stroke-width: 3px;
 }
 
+.creature:hover {
+    stroke: rgb(165, 252, 125);
+    stroke-width: 5px;
+}
+
 .creature-selected {
-    stroke: rgba(255, 254, 197, 0.849);
+    stroke: rgb(255, 254, 197);
     stroke-width: 5px;
 }
 

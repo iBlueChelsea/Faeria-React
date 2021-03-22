@@ -6,11 +6,16 @@ import { useStore } from "../../../../hooks-store/store";
 const Card = (props) => {
   const [state, dispatch] = useStore();
   const user = "player1";
+  const opponent = "player2";
 
   const cardHandler = () => {
     if (state.hand[props.index].selectable && state.data[user].cards[props.id].faeria_cost <= state.data[user].faeria) {
-      const payload = { player: user, hand_id: props.index, card_id: props.id };
-      dispatch("SELECT_CARD", payload);
+      const payload = { player: user, opponent: opponent, hand_id: props.index, card_id: props.id };
+      if (state.data[user].cards[props.id].type === 'event') {
+        dispatch("SELECT_EVENT", payload);
+      } else {
+        dispatch("SELECT_CARD", payload);
+      }
     }
   };
 

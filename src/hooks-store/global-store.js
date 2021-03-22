@@ -1,4 +1,5 @@
 import { initStore } from "./store";
+import EventProcessor from "./event-processor";
 
 const configureStore = () => {
   const actions = {
@@ -60,7 +61,7 @@ const configureStore = () => {
         shuffledDeck.push(prevDeck[random]);
         prevDeck.splice(random, 1);
       }
-      if (data.player === "player2") {
+      if (data.player === "player1") {
         newHand.push(0);
       }
       updatedState.data[data.player].deck = shuffledDeck;
@@ -142,12 +143,20 @@ const configureStore = () => {
     },
     DRAW_CARD: (currentState, player) => {
       const updatedState = JSON.parse(JSON.stringify(currentState));
-      if (updatedState.data[player].hand.length < 9) {
-        updatedState.data[player].hand.push(
-          updatedState.data[player].deck.splice(0, 1)[0]
-        );
+      const god = {
+        player1: "D6",
+        player2: "D0",
+      };
+      if (updatedState.data[player].deck.length > 0) {
+        if (updatedState.data[player].hand.length < 9) {
+          updatedState.data[player].hand.push(
+            updatedState.data[player].deck.splice(0, 1)[0]
+          );
+        } else {
+          updatedState.data[player].deck.splice(0, 1);
+        }
       } else {
-        updatedState.data[player].deck.splice(0, 1);
+        updatedState.data.board.gods[god[player]].health -= 1;
       }
       updatedState.data[player].wheel_used = true;
       return updatedState;
@@ -295,6 +304,28 @@ const configureStore = () => {
       }
       return updatedState;
     },
+    SELECT_EVENT: (currentState, data) => {
+      let updatedState = JSON.parse(JSON.stringify(currentState));
+      const EP = new EventProcessor(updatedState, data);
+      if (updatedState.data[data.player].cards[data.card_id].effects.target) {
+        updatedState = EP.initEventLogic();
+      } else {
+        updatedState = EP.handleEventLogic();
+      }
+      return updatedState;
+    },
+    PROCESS_EVENT_OCCUPANT: (currentState, data) => {
+      let updatedState = JSON.parse(JSON.stringify(currentState));
+      const EP = new EventProcessor(updatedState, data);
+      updatedState = EP.handleEventLogic();
+      return updatedState;
+    },
+    PROCESS_EVENT_TILE: (currentState, data) => {
+      let updatedState = JSON.parse(JSON.stringify(currentState));
+      const EP = new EventProcessor(updatedState, data);
+      updatedState = EP.handleEventLogic();
+      return updatedState;
+    },
     SUMMON_CREATURE: (currentState, data) => {
       const updatedState = JSON.parse(JSON.stringify(currentState));
       const newOccupant = updatedState.data.board.tiles[data.tile_id].occupant;
@@ -310,7 +341,9 @@ const configureStore = () => {
         ];
       newOccupant.id = card.id;
       newOccupant.attack = card.attack;
+      newOccupant.base_attack = card.base_attack;
       newOccupant.health = card.health;
+      newOccupant.base_health = card.base_health;
       newOccupant.movement = card.movement;
       newOccupant.ranged = card.ranged;
       newOccupant.hasMoved = true;
@@ -725,8 +758,10 @@ const configureStore = () => {
       const removeOccupant = {
         player: "",
         id: 0,
-        health: 0,
         attack: 0,
+        base_attack: 0,
+        health: 0,
+        base_health: 0,
         movement: {
           range: 1,
           special: {
@@ -780,8 +815,10 @@ const configureStore = () => {
       const removeOccupant = {
         player: "",
         id: 0,
-        health: 0,
         attack: 0,
+        base_attack: 0,
+        health: 0,
+        base_health: 0,
         movement: {
           range: 1,
           special: {
@@ -875,12 +912,20 @@ const configureStore = () => {
           updatedState.data.board.wells[key].collected = false;
         }
       });
-      if (updatedState.data[player].hand.length < 9) {
-        updatedState.data[player].hand.push(
-          updatedState.data[player].deck.splice(0, 1)[0]
-        );
+      const god = {
+        player1: "D6",
+        player2: "D0",
+      };
+      if (updatedState.data[player].deck.length > 0) {
+        if (updatedState.data[player].hand.length < 9) {
+          updatedState.data[player].hand.push(
+            updatedState.data[player].deck.splice(0, 1)[0]
+          );
+        } else {
+          updatedState.data[player].deck.splice(0, 1);
+        }
       } else {
-        updatedState.data[player].deck.splice(0, 1);
+        updatedState.data.board.gods[god[player]].health -= 1;
       }
       Object.keys(updatedState.data.board.tiles).forEach((key) => {
         updatedState.data.board.tiles[key].occupant.hasMoved = false;
@@ -1266,8 +1311,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1288,8 +1335,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1310,8 +1359,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1332,8 +1383,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1354,8 +1407,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1376,8 +1431,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1398,8 +1455,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1420,8 +1479,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1442,8 +1503,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1464,8 +1527,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1486,8 +1551,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1508,8 +1575,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1530,8 +1599,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1552,8 +1623,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1574,8 +1647,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1596,8 +1671,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1618,8 +1695,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1640,8 +1719,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1662,8 +1743,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1684,8 +1767,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1706,8 +1791,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1728,8 +1815,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1750,8 +1839,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1772,8 +1863,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1794,8 +1887,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1816,8 +1911,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1838,8 +1935,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1860,8 +1959,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1882,8 +1983,10 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
-              health: 0,
               attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1899,13 +2002,15 @@ const configureStore = () => {
             },
           },
           G1: {
-            type: "lake",
-            owner: "player2",
+            type: "none",
+            owner: "",
             occupant: {
-              player: "player2",
-              id: 10,
-              health: 1,
-              attack: 1,
+              player: "",
+              id: 0,
+              attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1921,13 +2026,15 @@ const configureStore = () => {
             },
           },
           G2: {
-            type: "lake",
-            owner: "player2",
+            type: "none",
+            owner: "",
             occupant: {
-              player: "player2",
-              id: 2,
-              health: 6,
-              attack: 3,
+              player: "",
+              id: 0,
+              attack: 0,
+              base_attack: 0,
+              health: 0,
+              base_health: 0,
               movement: {
                 range: 1,
                 special: {
@@ -1995,13 +2102,35 @@ const configureStore = () => {
           30,
         ],
         cards: {
+          0: {
+            id: 0,
+            type: "event",
+            faeria_cost: 0,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
+            attack: 0,
+            base_attack: 0,
+            health: 0,
+            base_health: 0,
+            movement: {
+              range: 1,
+              special: {
+                aquatic: false,
+                flying: false,
+                jump: false,
+              },
+            },
+            ranged: false,
+            effects: { target: true },
+          },
           1: {
             id: 1,
             type: "creature",
             faeria_cost: 4,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 2,
+            base_attack: 2,
             health: 3,
+            base_health: 3,
             movement: {
               range: 1,
               special: {
@@ -2019,7 +2148,9 @@ const configureStore = () => {
             faeria_cost: 4,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 2,
+            base_attack: 2,
             health: 3,
+            base_health: 3,
             movement: {
               range: 1,
               special: {
@@ -2037,7 +2168,9 @@ const configureStore = () => {
             faeria_cost: 4,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 2,
+            base_attack: 2,
             health: 3,
+            base_health: 3,
             movement: {
               range: 1,
               special: {
@@ -2055,7 +2188,9 @@ const configureStore = () => {
             faeria_cost: 5,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
             attack: 3,
+            base_attack: 3,
             health: 6,
+            base_health: 6,
             movement: {
               range: 1,
               special: {
@@ -2073,7 +2208,9 @@ const configureStore = () => {
             faeria_cost: 5,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
             attack: 3,
+            base_attack: 3,
             health: 6,
+            base_health: 6,
             movement: {
               range: 1,
               special: {
@@ -2091,7 +2228,9 @@ const configureStore = () => {
             faeria_cost: 5,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
             attack: 3,
+            base_attack: 3,
             health: 6,
+            base_health: 6,
             movement: {
               range: 1,
               special: {
@@ -2109,7 +2248,9 @@ const configureStore = () => {
             faeria_cost: 3,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 1,
+            base_attack: 1,
             health: 3,
+            base_health: 3,
             movement: {
               range: 1,
               special: {
@@ -2127,7 +2268,9 @@ const configureStore = () => {
             faeria_cost: 3,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 1,
+            base_attack: 1,
             health: 3,
+            base_health: 3,
             movement: {
               range: 1,
               special: {
@@ -2145,7 +2288,9 @@ const configureStore = () => {
             faeria_cost: 3,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
             attack: 1,
+            base_attack: 1,
             health: 3,
+            base_health: 3,
             movement: {
               range: 1,
               special: {
@@ -2163,7 +2308,9 @@ const configureStore = () => {
             faeria_cost: 4,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
             attack: 3,
+            base_attack: 3,
             health: 3,
+            base_health: 3,
             movement: {
               range: 1,
               special: {
@@ -2181,7 +2328,9 @@ const configureStore = () => {
             faeria_cost: 4,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
             attack: 3,
+            base_attack: 3,
             health: 3,
+            base_health: 3,
             movement: {
               range: 1,
               special: {
@@ -2199,7 +2348,9 @@ const configureStore = () => {
             faeria_cost: 4,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
             attack: 3,
+            base_attack: 3,
             health: 3,
+            base_health: 3,
             movement: {
               range: 1,
               special: {
@@ -2216,8 +2367,10 @@ const configureStore = () => {
             type: "event",
             faeria_cost: 3,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 0,
-            health: 0,
+            attack: 5,
+            base_attack: 5,
+            health: 5,
+            base_health: 5,
             movement: {
               range: 1,
               special: {
@@ -2227,15 +2380,17 @@ const configureStore = () => {
               },
             },
             ranged: false,
-            effects: [],
+            effects: { target: true },
           },
           14: {
             id: 5,
             type: "event",
             faeria_cost: 3,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 0,
-            health: 0,
+            attack: 5,
+            base_attack: 5,
+            health: 5,
+            base_health: 5,
             movement: {
               range: 1,
               special: {
@@ -2245,15 +2400,17 @@ const configureStore = () => {
               },
             },
             ranged: false,
-            effects: [],
+            effects: { target: true },
           },
           15: {
             id: 5,
             type: "event",
             faeria_cost: 3,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 0,
-            health: 0,
+            attack: 5,
+            base_attack: 5,
+            health: 5,
+            base_health: 5,
             movement: {
               range: 1,
               special: {
@@ -2263,15 +2420,17 @@ const configureStore = () => {
               },
             },
             ranged: false,
-            effects: [],
+            effects: { target: true },
           },
           16: {
             id: 6,
             type: "event",
             faeria_cost: 3,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 0,
-            health: 0,
+            attack: 5,
+            base_attack: 5,
+            health: 5,
+            base_health: 5,
             movement: {
               range: 1,
               special: {
@@ -2288,8 +2447,10 @@ const configureStore = () => {
             type: "event",
             faeria_cost: 3,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 0,
-            health: 0,
+            attack: 5,
+            base_attack: 5,
+            health: 5,
+            base_health: 5,
             movement: {
               range: 1,
               special: {
@@ -2306,8 +2467,10 @@ const configureStore = () => {
             type: "event",
             faeria_cost: 3,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 0,
-            health: 0,
+            attack: 5,
+            base_attack: 5,
+            health: 5,
+            base_health: 5,
             movement: {
               range: 1,
               special: {
@@ -2324,8 +2487,10 @@ const configureStore = () => {
             type: "event",
             faeria_cost: 3,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 0,
-            health: 0,
+            attack: 5,
+            base_attack: 5,
+            health: 5,
+            base_health: 5,
             movement: {
               range: 1,
               special: {
@@ -2342,8 +2507,10 @@ const configureStore = () => {
             type: "event",
             faeria_cost: 3,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 0,
-            health: 0,
+            attack: 5,
+            base_attack: 5,
+            health: 5,
+            base_health: 5,
             movement: {
               range: 1,
               special: {
@@ -2360,8 +2527,10 @@ const configureStore = () => {
             type: "event",
             faeria_cost: 3,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 0,
-            health: 0,
+            attack: 5,
+            base_attack: 5,
+            health: 5,
+            base_health: 5,
             movement: {
               range: 1,
               special: {
@@ -2379,7 +2548,9 @@ const configureStore = () => {
             faeria_cost: 5,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
             attack: 5,
+            base_attack: 5,
             health: 5,
+            base_health: 5,
             movement: {
               range: 1,
               special: {
@@ -2397,7 +2568,9 @@ const configureStore = () => {
             faeria_cost: 5,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
             attack: 5,
+            base_attack: 5,
             health: 5,
+            base_health: 5,
             movement: {
               range: 1,
               special: {
@@ -2415,7 +2588,9 @@ const configureStore = () => {
             faeria_cost: 5,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
             attack: 5,
+            base_attack: 5,
             health: 5,
+            base_health: 5,
             movement: {
               range: 1,
               special: {
@@ -2432,8 +2607,10 @@ const configureStore = () => {
             type: "event",
             faeria_cost: 6,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 4, wild: 0 },
-            attack: 0,
-            health: 0,
+            attack: 1,
+            base_attack: 1,
+            health: 1,
+            base_health: 1,
             movement: {
               range: 1,
               special: {
@@ -2450,8 +2627,10 @@ const configureStore = () => {
             type: "event",
             faeria_cost: 6,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 4, wild: 0 },
-            attack: 0,
-            health: 0,
+            attack: 1,
+            base_attack: 1,
+            health: 1,
+            base_health: 1,
             movement: {
               range: 1,
               special: {
@@ -2468,8 +2647,10 @@ const configureStore = () => {
             type: "event",
             faeria_cost: 6,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 4, wild: 0 },
-            attack: 0,
-            health: 0,
+            attack: 1,
+            base_attack: 1,
+            health: 1,
+            base_health: 1,
             movement: {
               range: 1,
               special: {
@@ -2487,7 +2668,9 @@ const configureStore = () => {
             faeria_cost: 1,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 1, wild: 0 },
             attack: 1,
+            base_attack: 1,
             health: 1,
+            base_health: 1,
             movement: {
               range: 1,
               special: {
@@ -2505,7 +2688,9 @@ const configureStore = () => {
             faeria_cost: 1,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 1, wild: 0 },
             attack: 1,
+            base_attack: 1,
             health: 1,
+            base_health: 1,
             movement: {
               range: 1,
               special: {
@@ -2523,7 +2708,9 @@ const configureStore = () => {
             faeria_cost: 1,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 1, wild: 0 },
             attack: 1,
+            base_attack: 1,
             health: 1,
+            base_health: 1,
             movement: {
               range: 1,
               special: {

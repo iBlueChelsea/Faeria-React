@@ -5,9 +5,14 @@ import "./Tile.css";
 
 const Tile = (props) => {
   const [state, dispatch] = useStore();
-  const user = 'player1';
-  const extraclass = (state.tiles[props.id].selectable) ? 'tile-selectable' : 'tile-not-selectable';
-  const tileclass = (state.data.board.tiles[props.id].owner !== user) ? props.type + '-opponent' : props.type;
+  const user = "player1";
+  const extraclass = state.tiles[props.id].selectable
+    ? "tile-selectable"
+    : "tile-not-selectable";
+  const tileclass =
+    state.data.board.tiles[props.id].owner !== user
+      ? props.type + "-opponent"
+      : props.type;
 
   const hexSize = props.hexSize;
   const startPosX = props.startPosX;
@@ -23,11 +28,13 @@ const Tile = (props) => {
 
   const tileHandler = () => {
     if (state.tiles[props.id].selectable) {
-      const payload = {player: user, tile_id: props.id}
-      if (state.currentAction === 'summon_creature') {
+      const payload = { player: user, tile_id: props.id };
+      if (state.currentAction === "summon_creature") {
         dispatch("SUMMON_CREATURE", payload);
-      } else if (state.currentAction === 'occupant_selected') {
+      } else if (state.currentAction === "occupant_selected") {
         dispatch("MOVE_OCCUPANT", payload);
+      } else if (state.currentAction === "event_tile") {
+        dispatch("PROCESS_EVENT_TILE", payload);
       } else {
         dispatch("BUILD_TILE", payload);
       }
@@ -35,10 +42,18 @@ const Tile = (props) => {
   };
 
   return (
-  <React.Fragment>
-    <polygon className={tileclass + ' ' + extraclass} points={points} onClick={tileHandler} />
-    <Occupant tile={props.id} x={startPosX + hexSize * 0.5} y={parseInt(startPosY)+9}/>
-  </React.Fragment>
+    <React.Fragment>
+      <polygon
+        className={tileclass + " " + extraclass}
+        points={points}
+        onClick={tileHandler}
+      />
+      <Occupant
+        tile={props.id}
+        x={startPosX + hexSize * 0.5}
+        y={parseInt(startPosY) + 9}
+      />
+    </React.Fragment>
   );
 };
 
