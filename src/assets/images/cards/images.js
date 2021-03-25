@@ -1,25 +1,31 @@
-import image0 from './0.jpg'
-import image1 from './1.jpg'
-import image2 from './2.jpg'
-import image3 from './3.jpg'
-import image4 from './4.jpg'
-import image5 from './5.jpg'
-import image6 from './6.jpg'
-import image7 from './7.jpg'
-import image8 from './8.jpg'
-import image9 from './9.jpg'
-import image10 from './10.jpg'
-import image11 from './11.jpg'
-import image12 from './12.jpg'
-import image13 from './13.jpg'
-import image14 from './14.jpg'
-import image15 from './15.jpg'
-import image16 from './16.jpg'
-import image17 from './17.jpg'
-import image18 from './18.jpg'
-import image19 from './19.jpg'
-import image20 from './20.jpg'
-import image21 from './21.jpg'
+import image0 from './cheeksplore.jpg'
+import image1 from './mercheek.jpg'
+import image2 from './dolphin_cheekrider.jpg'
+import image3 from './clamcheek.jpg'
+import image4 from './ninjacheek.jpg'
+import image5 from './song_of_the_mercheek.jpg'
+import image6 from './cheek_in_a_bottle.jpg'
+import image7 from './cheekie_in_a_lamp.jpg'
+import image8 from './cheeklord.jpg'
+import image9 from './rain_of_cheek.jpg'
+import image10 from './cheekdrop.jpg'
+import image11 from './cheekmoon.jpg'
+import image12 from './cheekpearl.jpg'
+import image13 from './crabcheek.jpg'
+import image14 from './cheekcano.jpg'
+import image15 from './cheekdevil.jpg'
+import image16 from './cheekflame.jpg'
+import image17 from './cheekblast.jpg'
+import image18 from './cheekflame_faerie.jpg'
+import image19 from './baby_cheekdevil.jpg'
+import image20 from './ghostcheek_tower.jpg'
+import image21 from './ghostcheek.jpg'
+import image22 from './ghostcheek_alchemist.jpg'
+import image23 from './cheekruption.jpg'
+import image24 from './suncheek.jpg'
+import image25 from './cheekflower.jpg'
+import image26 from './cavecheek_dweller.jpg'
+import image27 from './mushroom_cheek.jpg'
 
 const images = {
     0: image0,
@@ -44,6 +50,12 @@ const images = {
     19: image19,
     20: image20,
     21: image21,
+    22: image22,
+    23: image23,
+    24: image24,
+    25: image25,
+    26: image26,
+    27: image27,
 }
 
 export default images;

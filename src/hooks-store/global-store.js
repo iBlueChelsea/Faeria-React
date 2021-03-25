@@ -156,7 +156,9 @@ const configureStore = () => {
           updatedState.data[player].deck.splice(0, 1);
         }
       } else {
-        updatedState.data.board.gods[god[player]].health -= 1;
+        updatedState.data.board.gods[god[player]].health -= ++updatedState.data[
+          player
+        ].health_dmg;
       }
       updatedState.data[player].wheel_used = true;
       return updatedState;
@@ -253,15 +255,14 @@ const configureStore = () => {
       };
       const landtypes = getLandTypes();
       const requirementsMet = (tile) => {
-        let bool = true;
         if (updatedState.data.board.tiles[tile].owner !== data.player) {
-          bool = false;
+          return false;
         }
         if (updatedState.data.board.tiles[tile].occupant.player) {
-          bool = false;
+          return false;
         }
         if (!landtypes.includes(updatedState.data.board.tiles[tile].type)) {
-          bool = false;
+          return false;
         }
         Object.keys(
           updatedState.data[data.player].cards[data.card_id].land_cost
@@ -272,7 +273,7 @@ const configureStore = () => {
                 key
               ] > lands[key]
             ) {
-              bool = false;
+              return false;
             }
           } else {
             if (
@@ -283,11 +284,11 @@ const configureStore = () => {
                 (sum, currentValue) => sum + currentValue
               )
             ) {
-              bool = false;
+              return false;
             }
           }
         });
-        return bool;
+        return true;
       };
       if (newHand[data.hand_id].selected) {
         updatedState.currentAction = "summon_creature";
@@ -306,11 +307,48 @@ const configureStore = () => {
     },
     SELECT_EVENT: (currentState, data) => {
       let updatedState = JSON.parse(JSON.stringify(currentState));
-      const EP = new EventProcessor(updatedState, data);
-      if (updatedState.data[data.player].cards[data.card_id].effects.target) {
-        updatedState = EP.initEventLogic();
-      } else {
-        updatedState = EP.handleEventLogic();
+      const getLands = () => {
+        let lands = { forest: 0, lake: 0, mountain: 0, desert: 0 };
+        Object.values(updatedState.data.board.tiles).forEach((tile) => {
+          if (tile.owner === data.player && tile.type !== "prairie") {
+            lands[tile.type] += 1;
+          }
+        });
+        return lands;
+      };
+      const lands = getLands();
+      let runLogic = true;
+      Object.keys(
+        updatedState.data[data.player].cards[data.card_id].land_cost
+      ).forEach((key) => {
+        if (key !== "wild") {
+          if (
+            updatedState.data[data.player].cards[data.card_id].land_cost[key] >
+            lands[key]
+          ) {
+            runLogic = false;
+          }
+        } else {
+          if (
+            updatedState.data[data.player].cards[data.card_id].land_cost[key] >
+            Object.values(lands).reduce(
+              (sum, currentValue) => sum + currentValue
+            )
+          ) {
+            runLogic = false;
+          }
+        }
+      });
+      if (runLogic) {
+        const EP = new EventProcessor(updatedState, data);
+        if (updatedState.data[data.player].cards[data.card_id].effects.target) {
+          updatedState = EP.initEventLogic();
+        } else {
+          updatedState.hand[data.hand_id].selected = !updatedState.hand[
+            data.hand_id
+          ].selected;
+          updatedState = EP.handleEventLogic();
+        }
       }
       return updatedState;
     },
@@ -340,6 +378,9 @@ const configureStore = () => {
           updatedState.data[data.player].hand[selected_card_id - 1]
         ];
       newOccupant.id = card.id;
+      newOccupant.type = card.type;
+      newOccupant.faeria_cost = card.faeria_cost;
+      newOccupant.land_cost = card.land_cost;
       newOccupant.attack = card.attack;
       newOccupant.base_attack = card.base_attack;
       newOccupant.health = card.health;
@@ -758,6 +799,9 @@ const configureStore = () => {
       const removeOccupant = {
         player: "",
         id: 0,
+        type: "",
+        faeria_cost: 0,
+        land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
         attack: 0,
         base_attack: 0,
         health: 0,
@@ -815,6 +859,9 @@ const configureStore = () => {
       const removeOccupant = {
         player: "",
         id: 0,
+        type: "",
+        faeria_cost: 0,
+        land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
         attack: 0,
         base_attack: 0,
         health: 0,
@@ -925,7 +972,9 @@ const configureStore = () => {
           updatedState.data[player].deck.splice(0, 1);
         }
       } else {
-        updatedState.data.board.gods[god[player]].health -= 1;
+        updatedState.data.board.gods[god[player]].health -= ++updatedState.data[
+          player
+        ].health_dmg;
       }
       Object.keys(updatedState.data.board.tiles).forEach((key) => {
         updatedState.data.board.tiles[key].occupant.hasMoved = false;
@@ -1311,6 +1360,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -1335,6 +1387,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -1359,6 +1414,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -1383,6 +1441,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -1407,6 +1468,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -1431,6 +1495,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -1455,6 +1522,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -1479,6 +1549,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -1503,6 +1576,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -1527,6 +1603,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -1551,6 +1630,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -1575,6 +1657,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -1599,6 +1684,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -1623,6 +1711,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -1647,6 +1738,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -1671,6 +1765,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -1695,6 +1792,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -1719,6 +1819,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -1743,6 +1846,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -1767,6 +1873,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -1791,6 +1900,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -1815,6 +1927,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -1839,6 +1954,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -1863,6 +1981,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -1887,6 +2008,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -1911,6 +2035,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -1935,6 +2062,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -1959,6 +2089,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -1983,6 +2116,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -2007,6 +2143,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -2031,6 +2170,9 @@ const configureStore = () => {
             occupant: {
               player: "",
               id: 0,
+              type: "",
+              faeria_cost: 0,
+              land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
               attack: 0,
               base_attack: 0,
               health: 0,
@@ -2066,7 +2208,7 @@ const configureStore = () => {
         mulligan: true,
         wheel_used: false,
         wheel_neutral_counter: 0,
-        health: 20,
+        health_dmg: 0,
         faeria: 3,
         hand: [],
         deck: [
@@ -2427,10 +2569,10 @@ const configureStore = () => {
             type: "event",
             faeria_cost: 3,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 5,
-            base_attack: 5,
-            health: 5,
-            base_health: 5,
+            attack: 0,
+            base_attack: 0,
+            health: 0,
+            base_health: 0,
             movement: {
               range: 1,
               special: {
@@ -2440,17 +2582,17 @@ const configureStore = () => {
               },
             },
             ranged: false,
-            effects: [],
+            effects: { target: false },
           },
           17: {
             id: 6,
             type: "event",
             faeria_cost: 3,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 5,
-            base_attack: 5,
-            health: 5,
-            base_health: 5,
+            attack: 0,
+            base_attack: 0,
+            health: 0,
+            base_health: 0,
             movement: {
               range: 1,
               special: {
@@ -2460,17 +2602,17 @@ const configureStore = () => {
               },
             },
             ranged: false,
-            effects: [],
+            effects: { target: false },
           },
           18: {
             id: 6,
             type: "event",
             faeria_cost: 3,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 5,
-            base_attack: 5,
-            health: 5,
-            base_health: 5,
+            attack: 0,
+            base_attack: 0,
+            health: 0,
+            base_health: 0,
             movement: {
               range: 1,
               special: {
@@ -2480,17 +2622,17 @@ const configureStore = () => {
               },
             },
             ranged: false,
-            effects: [],
+            effects: { target: false },
           },
           19: {
             id: 7,
             type: "event",
             faeria_cost: 3,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 5,
-            base_attack: 5,
-            health: 5,
-            base_health: 5,
+            attack: 0,
+            base_attack: 0,
+            health: 0,
+            base_health: 0,
             movement: {
               range: 1,
               special: {
@@ -2500,17 +2642,17 @@ const configureStore = () => {
               },
             },
             ranged: false,
-            effects: [],
+            effects: { target: false },
           },
           20: {
             id: 7,
             type: "event",
             faeria_cost: 3,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 5,
-            base_attack: 5,
-            health: 5,
-            base_health: 5,
+            attack: 0,
+            base_attack: 0,
+            health: 0,
+            base_health: 0,
             movement: {
               range: 1,
               special: {
@@ -2520,17 +2662,17 @@ const configureStore = () => {
               },
             },
             ranged: false,
-            effects: [],
+            effects: { target: false },
           },
           21: {
             id: 7,
             type: "event",
             faeria_cost: 3,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 5,
-            base_attack: 5,
-            health: 5,
-            base_health: 5,
+            attack: 0,
+            base_attack: 0,
+            health: 0,
+            base_health: 0,
             movement: {
               range: 1,
               special: {
@@ -2540,7 +2682,7 @@ const configureStore = () => {
               },
             },
             ranged: false,
-            effects: [],
+            effects: { target: false },
           },
           22: {
             id: 8,
@@ -2607,10 +2749,10 @@ const configureStore = () => {
             type: "event",
             faeria_cost: 6,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 4, wild: 0 },
-            attack: 1,
-            base_attack: 1,
-            health: 1,
-            base_health: 1,
+            attack: 0,
+            base_attack: 0,
+            health: 0,
+            base_health: 0,
             movement: {
               range: 1,
               special: {
@@ -2620,17 +2762,17 @@ const configureStore = () => {
               },
             },
             ranged: false,
-            effects: [],
+            effects: { target: false },
           },
           26: {
             id: 9,
             type: "event",
             faeria_cost: 6,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 4, wild: 0 },
-            attack: 1,
-            base_attack: 1,
-            health: 1,
-            base_health: 1,
+            attack: 0,
+            base_attack: 0,
+            health: 0,
+            base_health: 0,
             movement: {
               range: 1,
               special: {
@@ -2640,17 +2782,17 @@ const configureStore = () => {
               },
             },
             ranged: false,
-            effects: [],
+            effects: { target: false },
           },
           27: {
             id: 9,
             type: "event",
             faeria_cost: 6,
             land_cost: { forest: 0, desert: 0, mountain: 0, lake: 4, wild: 0 },
-            attack: 1,
-            base_attack: 1,
-            health: 1,
-            base_health: 1,
+            attack: 0,
+            base_attack: 0,
+            health: 0,
+            base_health: 0,
             movement: {
               range: 1,
               special: {
@@ -2660,7 +2802,7 @@ const configureStore = () => {
               },
             },
             ranged: false,
-            effects: [],
+            effects: { target: false },
           },
           28: {
             id: 10,
@@ -2703,14 +2845,14 @@ const configureStore = () => {
             effects: [],
           },
           30: {
-            id: 10,
-            type: "creature",
-            faeria_cost: 1,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 1, wild: 0 },
-            attack: 1,
-            base_attack: 1,
-            health: 1,
-            base_health: 1,
+            id: 11,
+            type: "event",
+            faeria_cost: 9,
+            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 4, wild: 0 },
+            attack: 0,
+            base_attack: 0,
+            health: 0,
+            base_health: 0,
             movement: {
               range: 1,
               special: {
@@ -2720,7 +2862,7 @@ const configureStore = () => {
               },
             },
             ranged: false,
-            effects: [],
+            effects: { target: false },
           },
         },
       },
@@ -2729,7 +2871,7 @@ const configureStore = () => {
         mulligan: true,
         wheel_used: false,
         wheel_neutral_counter: 0,
-        health: 20,
+        health_dmg: 0,
         faeria: 3,
         hand: [],
         deck: [
