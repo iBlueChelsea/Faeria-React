@@ -26,6 +26,9 @@ import image24 from './suncheek.jpg'
 import image25 from './cheekflower.jpg'
 import image26 from './cavecheek_dweller.jpg'
 import image27 from './mushroom_cheek.jpg'
+import image28 from './cheekshrooms.jpg'
+import image29 from './cheektree_giant.jpg'
+import image30 from './cheekworld_tree.jpg'
 
 const images = {
     0: image0,
@@ -56,6 +59,9 @@ const images = {
     25: image25,
     26: image26,
     27: image27,
+    28: image28,
+    29: image29,
+    30: image30,
 }
 
 export default images;

@@ -214,7 +214,7 @@ export default class EventProcessor {
     return randomTiles;
   }
 
-  getOccupantByID(id) {
+  getOccupantByID(id,params = {}) {
     switch (id) {
       case 10:
         return {
@@ -254,14 +254,14 @@ export default class EventProcessor {
           movement: {
             range: 1,
             special: {
-              aquatic: true,
+              aquatic: false,
               flying: false,
               jump: false,
             },
           },
           ranged: false,
-          hasMoved: true,
-          hasAttacked: true,
+          hasMoved: params.hasMoved,
+          hasAttacked: params.hasAttacked,
           effectUsed: false,
         };
     }
@@ -371,7 +371,14 @@ export default class EventProcessor {
               this.data.player && this.getLandCostForOccupant(key, "lake") > 0
         )
         .forEach((tile) => {
-          this.state.data.board.tiles[tile].occupant = this.getOccupantByID(13);
+          this.state.data.board.tiles[tile].occupant = this.getOccupantByID(
+            13,
+            {
+              hasAttacked: this.state.data.board.tiles[tile].occupant
+                .hasAttacked,
+              hasMoved: this.state.data.board.tiles[tile].occupant.hasMoved,
+            }
+          );
         });
     }
   }
