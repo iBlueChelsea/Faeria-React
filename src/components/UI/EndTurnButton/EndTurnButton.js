@@ -3,11 +3,13 @@ import "./EndTurnButton.css";
 import {useStore} from '../../../hooks-store/store';
 
 const EndTurnButton = (props) => {
-  const [state,dispatch] = useStore();
+  const dispatch = useStore()[1];
   const user = 'player1';
+  const opponent = 'player2';
 
   const endTurnHandler = () => {
-    dispatch('END_TURN',user);
+    const payload = {player: user, opponent: opponent}
+    dispatch('END_TURN',payload);
   }
 
   return (

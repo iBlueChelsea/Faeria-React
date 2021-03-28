@@ -387,25 +387,31 @@ const configureStore = () => {
       newOccupant.health = card.health;
       newOccupant.base_health = card.base_health;
       newOccupant.movement = card.movement;
+      newOccupant.taunt = card.taunt;
+      newOccupant.divine = card.divine;
+      newOccupant.protection = card.protection;
       newOccupant.ranged = card.ranged;
-      if (!newOccupant.movement.haste) {
+      newOccupant.hasDashed = false;
+      if (!card.movement.haste) {
         newOccupant.hasMoved = true;
         newOccupant.hasAttacked = true;
       } else {
         newOccupant.hasMoved = false;
         newOccupant.hasAttacked = false;
-        Object.keys(updatedState.data.board.wells).forEach((key) => {
-          if (
-            updatedState.data.board.wells[key].adjacent.includes(
-              data.tile_id
-            ) &&
-            updatedState.data.board.wells[key].available
-          ) {
-            updatedState.data.board.wells[key].available = false;
-            updatedState.data.board.wells[key].collected = true;
-            updatedState.data[data.player].faeria += 1;
-          }
-        });
+        if (card.movement.dash === 0) {
+          Object.keys(updatedState.data.board.wells).forEach((key) => {
+            if (
+              updatedState.data.board.wells[key].adjacent.includes(
+                data.tile_id
+              ) &&
+              updatedState.data.board.wells[key].available
+            ) {
+              updatedState.data.board.wells[key].available = false;
+              updatedState.data.board.wells[key].collected = true;
+              updatedState.data[data.player].faeria += 1;
+            }
+          });
+        }
       }
       updatedState.data.board.tiles[data.tile_id].occupant = newOccupant;
       Object.keys(updatedState.tiles).forEach((key) => {
@@ -438,6 +444,13 @@ const configureStore = () => {
       updatedState.tiles[data.tile_id].occupantSelected = !updatedState.tiles[
         data.tile_id
       ].occupantSelected;
+      const anyTaunt = (taunt_tile) =>
+        updatedState.data.board.tiles[taunt_tile].occupant.taunt &&
+        updatedState.data.board.tiles[taunt_tile].occupant.player ===
+          data.opponent;
+      const isTaunted = updatedState.tiles[data.tile_id].adjacent.some(
+        anyTaunt
+      );
       const jumpTiles = [];
       if (
         updatedState.data.board.tiles[data.tile_id].occupant.movement.special
@@ -458,7 +471,10 @@ const configureStore = () => {
         });
       }
       const movementRange =
-        updatedState.data.board.tiles[data.tile_id].occupant.movement.range;
+        updatedState.data.board.tiles[data.tile_id].occupant.movement.dash >
+          0 && !updatedState.data.board.tiles[data.tile_id].occupant.hasDashed
+          ? updatedState.data.board.tiles[data.tile_id].occupant.movement.dash
+          : updatedState.data.board.tiles[data.tile_id].occupant.movement.range;
       const rangeTiles = [];
       const rangeTilesHelper = {};
       for (let i = 1; i <= movementRange; i++) {
@@ -672,19 +688,30 @@ const configureStore = () => {
         if (updatedState.data.board.tiles[tile_id].occupant.player) {
           return false;
         }
-        if (updatedState.data.board.tiles[data.tile_id].occupant.hasMoved) {
-          return false;
-        }
         if (
-          updatedState.data.board.tiles[data.tile_id].occupant.movement.special
-            .jump
+          updatedState.data.board.tiles[data.tile_id].occupant.movement.dash >
+            0 &&
+          !updatedState.data.board.tiles[data.tile_id].occupant.hasDashed
         ) {
-          if (!jumpTiles.includes(tile_id) && !rangeTiles.includes(tile_id)) {
+          if (!rangeTiles.includes(tile_id)) {
             return false;
           }
         } else {
-          if (!rangeTiles.includes(tile_id)) {
+          if (updatedState.data.board.tiles[data.tile_id].occupant.hasMoved) {
             return false;
+          }
+          if (isTaunted) return false;
+          if (
+            updatedState.data.board.tiles[data.tile_id].occupant.movement
+              .special.jump
+          ) {
+            if (!jumpTiles.includes(tile_id) && !rangeTiles.includes(tile_id)) {
+              return false;
+            }
+          } else {
+            if (!rangeTiles.includes(tile_id)) {
+              return false;
+            }
           }
         }
         if (
@@ -768,6 +795,23 @@ const configureStore = () => {
           updatedState.tiles[key].selectable = false;
           updatedState.tiles[key].occupantSelectable = true;
         });
+        updatedState.data.board.tiles[data.tile_id].occupant.hasDashed = true;
+        if (
+          updatedState.data.board.tiles[data.tile_id].occupant.movement.haste
+        ) {
+          Object.keys(updatedState.data.board.wells).forEach((key) => {
+            if (
+              updatedState.data.board.wells[key].adjacent.includes(
+                data.tile_id
+              ) &&
+              updatedState.data.board.wells[key].available
+            ) {
+              updatedState.data.board.wells[key].available = false;
+              updatedState.data.board.wells[key].collected = true;
+              updatedState.data[data.player].faeria += 1;
+            }
+          });
+        }
         updatedState.currentAction = "";
       }
       const god = data.player === "player1" ? "D0" : "D6";
@@ -810,30 +854,38 @@ const configureStore = () => {
       )[0];
       updatedState.data.board.tiles[data.tile_id].occupant =
         updatedState.data.board.tiles[selected_tile_id].occupant;
-      updatedState.data.board.tiles[data.tile_id].occupant.hasMoved = true;
-      if (updatedState.data.board.tiles[data.tile_id].occupant.ranged) {
-        updatedState.data.board.tiles[data.tile_id].occupant.hasAttacked = true;
-      }
       const removeOccupant = {
         player: "",
         id: 0,
         type: "",
         faeria_cost: 0,
-        land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
+        land_cost: {
+          forest: 0,
+          desert: 0,
+          mountain: 0,
+          lake: 0,
+          wild: 0,
+        },
         attack: 0,
         base_attack: 0,
         health: 0,
         base_health: 0,
         movement: {
           range: 1,
+          haste: true,
+          dash: 0,
           special: {
             aquatic: false,
             flying: false,
             jump: false,
           },
         },
+        taunt: false,
+        divine: false,
+        protection: false,
         ranged: false,
         hasMoved: false,
+        hasDashed: false,
         hasAttacked: false,
         effectUsed: false,
       };
@@ -853,15 +905,50 @@ const configureStore = () => {
         updatedState.tiles[key].occupantSelectable = true;
       });
       updatedState.tiles[selected_tile_id].occupantSelected = false;
-      Object.keys(updatedState.data.board.wells).forEach((key) => {
+      if (
+        updatedState.data.board.tiles[data.tile_id].occupant.movement.dash >
+          0 &&
+        !updatedState.data.board.tiles[data.tile_id].occupant.hasDashed
+      ) {
+        updatedState.data.board.tiles[data.tile_id].occupant.hasDashed = true;
         if (
-          updatedState.data.board.wells[key].adjacent.includes(data.tile_id) &&
-          updatedState.data.board.wells[key].available
+          updatedState.data.board.tiles[data.tile_id].occupant.movement.haste
         ) {
-          updatedState.data.board.wells[key].available = false;
-          updatedState.data.board.wells[key].collected = true;
-          updatedState.data[data.player].faeria += 1;
+          Object.keys(updatedState.data.board.wells).forEach((key) => {
+            if (
+              updatedState.data.board.wells[key].adjacent.includes(
+                data.tile_id
+              ) &&
+              updatedState.data.board.wells[key].available
+            ) {
+              updatedState.data.board.wells[key].available = false;
+              updatedState.data.board.wells[key].collected = true;
+              updatedState.data[data.player].faeria += 1;
+            }
+          });
         }
+      } else {
+        updatedState.data.board.tiles[data.tile_id].occupant.hasMoved = true;
+        if (updatedState.data.board.tiles[data.tile_id].occupant.ranged) {
+          updatedState.data.board.tiles[
+            data.tile_id
+          ].occupant.hasAttacked = true;
+        }
+        Object.keys(updatedState.data.board.wells).forEach((key) => {
+          if (
+            updatedState.data.board.wells[key].adjacent.includes(
+              data.tile_id
+            ) &&
+            updatedState.data.board.wells[key].available
+          ) {
+            updatedState.data.board.wells[key].available = false;
+            updatedState.data.board.wells[key].collected = true;
+            updatedState.data[data.player].faeria += 1;
+          }
+        });
+      }
+      Object.keys(updatedState.gods).forEach((god) => {
+        updatedState.gods[god].selectable = false;
       });
       updatedState.currentAction = "";
       return updatedState;
@@ -879,21 +966,33 @@ const configureStore = () => {
         id: 0,
         type: "",
         faeria_cost: 0,
-        land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
+        land_cost: {
+          forest: 0,
+          desert: 0,
+          mountain: 0,
+          lake: 0,
+          wild: 0,
+        },
         attack: 0,
         base_attack: 0,
         health: 0,
         base_health: 0,
         movement: {
           range: 1,
+          haste: true,
+          dash: 0,
           special: {
             aquatic: false,
             flying: false,
             jump: false,
           },
         },
+        taunt: false,
+        divine: false,
+        protection: false,
         ranged: false,
         hasMoved: false,
+        hasDashed: false,
         hasAttacked: false,
         effectUsed: false,
       };
@@ -902,9 +1001,14 @@ const configureStore = () => {
       ) {
         attacker.health -= defender.attack;
       }
-      defender.health -= attacker.attack;
+      if (defender.protection) {
+        defender.protection = false;
+      } else {
+        defender.health -= attacker.attack;
+      }
       attacker.hasAttacked = true;
       attacker.hasMoved = true;
+      attacker.hasDashed = true;
       updatedState.data.board.tiles[selected_occupant_id].occupant =
         attacker.health > 0 ? attacker : removeOccupant;
       updatedState.data.board.tiles[data.tile_id].occupant =
@@ -961,17 +1065,17 @@ const configureStore = () => {
       }
       return updatedState;
     },
-    END_TURN: (currentState, player) => {
+    END_TURN: (currentState, data) => {
       const updatedState = JSON.parse(JSON.stringify(currentState));
-      updatedState.data[player].wheel_used = false;
-      updatedState.data[player].faeria += 3;
+      updatedState.data[data.player].wheel_used = false;
+      updatedState.data[data.player].faeria += 3;
       const anyAdjacent = (tile) =>
-        updatedState.data.board.tiles[tile].occupant.player === player;
+        updatedState.data.board.tiles[tile].occupant.player === data.player;
       Object.keys(updatedState.data.board.wells).forEach((key) => {
         if (updatedState.data.board.wells[key].adjacent.some(anyAdjacent)) {
           updatedState.data.board.wells[key].available = false;
           updatedState.data.board.wells[key].collected = true;
-          updatedState.data[player].faeria += 1;
+          updatedState.data[data.player].faeria += 1;
         } else {
           updatedState.data.board.wells[key].available = true;
           updatedState.data.board.wells[key].collected = false;
@@ -981,24 +1085,102 @@ const configureStore = () => {
         player1: "D6",
         player2: "D0",
       };
-      if (updatedState.data[player].deck.length > 0) {
-        if (updatedState.data[player].hand.length < 9) {
-          updatedState.data[player].hand.push(
-            updatedState.data[player].deck.splice(0, 1)[0]
+      if (updatedState.data[data.player].deck.length > 0) {
+        if (updatedState.data[data.player].hand.length < 9) {
+          updatedState.data[data.player].hand.push(
+            updatedState.data[data.player].deck.splice(0, 1)[0]
           );
         } else {
-          updatedState.data[player].deck.splice(0, 1);
+          updatedState.data[data.player].deck.splice(0, 1);
         }
       } else {
-        updatedState.data.board.gods[god[player]].health -= ++updatedState.data[
-          player
-        ].health_dmg;
+        updatedState.data.board.gods[god[data.player]].health -= ++updatedState
+          .data[data.player].health_dmg;
       }
+      const removeOccupant = {
+        player: "",
+        id: 0,
+        type: "",
+        faeria_cost: 0,
+        land_cost: {
+          forest: 0,
+          desert: 0,
+          mountain: 0,
+          lake: 0,
+          wild: 0,
+        },
+        attack: 0,
+        base_attack: 0,
+        health: 0,
+        base_health: 0,
+        movement: {
+          range: 1,
+          haste: true,
+          dash: 0,
+          special: {
+            aquatic: false,
+            flying: false,
+            jump: false,
+          },
+        },
+        taunt: false,
+        divine: false,
+        protection: false,
+        ranged: false,
+        hasMoved: false,
+        hasDashed: false,
+        hasAttacked: false,
+        effectUsed: false,
+      };
       Object.keys(updatedState.data.board.tiles).forEach((key) => {
-        updatedState.data.board.tiles[key].occupant.hasMoved = false;
-        updatedState.data.board.tiles[key].occupant.hasAttacked = false;
+        if (
+          (updatedState.data.board.tiles[key].occupant.movement.special
+            .aquatic &&
+            !updatedState.data.board.tiles[key].occupant.movement.special
+              .flying &&
+            updatedState.data.board.tiles[key].type !== "lake" &&
+            updatedState.data.board.tiles[key].type !== "none") ||
+          (!updatedState.data.board.tiles[key].occupant.movement.special
+            .aquatic &&
+            !updatedState.data.board.tiles[key].occupant.movement.special
+              .flying &&
+            updatedState.data.board.tiles[key].type === "none")
+        ) {
+          updatedState.data.board.tiles[key].occupant = removeOccupant;
+        } else {
+          updatedState.data.board.tiles[key].occupant.hasMoved = false;
+          updatedState.data.board.tiles[key].occupant.hasAttacked = false;
+        }
       });
       updatedState.data.status.turn += 1;
+
+      //Wheel
+      Object.keys(updatedState.wheelbuttons).forEach((wheel) => {
+        updatedState.wheelbuttons[wheel].selectable = true;
+        updatedState.wheelbuttons[wheel].selected = false;
+      });
+
+      //Hand
+      Object.keys(updatedState.hand).forEach((card) => {
+        updatedState.hand[card].selectable = true;
+        updatedState.hand[card].selected = false;
+      });
+
+      //Tiles and Occupants
+      Object.keys(updatedState.tiles).forEach((tile) => {
+        updatedState.tiles[tile].selectable = false;
+        updatedState.tiles[tile].selected = false;
+        updatedState.tiles[tile].occupantSelectable = true;
+        updatedState.tiles[tile].occupantSelected = false;
+      });
+
+      //Gods
+      Object.keys(updatedState.gods).forEach((god) => {
+        updatedState.gods[god].selectable = false;
+      });
+
+      updatedState.currentAction = "";
+
       return updatedState;
     },
   };
@@ -1393,24 +1575,30 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
           },
           A2: {
-            type: "none",
-            owner: "",
+            type: "lake",
+            owner: "player2",
             occupant: {
-              player: "",
-              id: 0,
+              player: "player2",
+              id: 12,
               type: "",
               faeria_cost: 0,
               land_cost: {
@@ -1420,20 +1608,26 @@ const configureStore = () => {
                 lake: 0,
                 wild: 0,
               },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
+              attack: 1,
+              base_attack: 1,
+              health: 1,
+              base_health: 1,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: true,
+              divine: true,
+              protection: true,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -1459,14 +1653,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -1492,14 +1692,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -1525,14 +1731,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -1558,14 +1770,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -1591,14 +1809,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -1624,14 +1848,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -1657,14 +1887,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -1690,14 +1926,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -1723,14 +1965,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -1756,14 +2004,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -1789,14 +2043,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -1822,14 +2082,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -1855,14 +2121,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -1888,14 +2160,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -1921,14 +2199,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -1954,14 +2238,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -1987,14 +2277,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -2020,14 +2316,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -2053,14 +2355,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -2086,14 +2394,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -2119,14 +2433,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -2152,14 +2472,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -2185,14 +2511,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -2218,14 +2550,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -2251,14 +2589,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -2284,14 +2628,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -2317,14 +2667,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -2350,14 +2706,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -2383,14 +2745,20 @@ const configureStore = () => {
               base_health: 0,
               movement: {
                 range: 1,
+                haste: true,
+                dash: 0,
                 special: {
                   aquatic: false,
                   flying: false,
                   jump: false,
                 },
               },
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
+              hasDashed: false,
               hasAttacked: false,
               effectUsed: false,
             },
@@ -2660,7 +3028,7 @@ const configureStore = () => {
             movement: {
               range: 1,
               haste: true,
-              dash: 0,
+              dash: 3,
               special: {
                 aquatic: false,
                 flying: false,
@@ -2685,7 +3053,7 @@ const configureStore = () => {
             movement: {
               range: 1,
               haste: true,
-              dash: 0,
+              dash: 3,
               special: {
                 aquatic: false,
                 flying: false,
@@ -2710,7 +3078,7 @@ const configureStore = () => {
             movement: {
               range: 1,
               haste: true,
-              dash: 0,
+              dash: 3,
               special: {
                 aquatic: false,
                 flying: false,

@@ -94,7 +94,10 @@ export default class EventProcessor {
     }
     Object.keys(this.state.data.board.tiles).forEach((key) => {
       if (
-        playerCheck.includes(this.state.data.board.tiles[key].occupant.player)
+        playerCheck.includes(
+          this.state.data.board.tiles[key].occupant.player
+        ) &&
+        !this.state.data.board.tiles[key].occupant.divine
       ) {
         this.state.tiles[key].occupantSelectable = true;
       } else {
@@ -117,21 +120,33 @@ export default class EventProcessor {
       id: 0,
       type: "",
       faeria_cost: 0,
-      land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
+      land_cost: {
+        forest: 0,
+        desert: 0,
+        mountain: 0,
+        lake: 0,
+        wild: 0,
+      },
       attack: 0,
       base_attack: 0,
       health: 0,
       base_health: 0,
       movement: {
         range: 1,
+        haste: true,
+        dash: 0,
         special: {
           aquatic: false,
           flying: false,
           jump: false,
         },
       },
+      taunt: false,
+      divine: false,
+      protection: false,
       ranged: false,
       hasMoved: false,
+      hasDashed: false,
       hasAttacked: false,
       effectUsed: false,
     };
@@ -214,7 +229,7 @@ export default class EventProcessor {
     return randomTiles;
   }
 
-  getOccupantByID(id,params = {}) {
+  getOccupantByID(id, params = {}) {
     switch (id) {
       case 10:
         return {
@@ -229,14 +244,20 @@ export default class EventProcessor {
           base_health: 1,
           movement: {
             range: 1,
+            haste: false,
+            dash: 0,
             special: {
               aquatic: true,
               flying: false,
               jump: false,
             },
           },
+          taunt: false,
+          divine: false,
+          protection: false,
           ranged: false,
           hasMoved: true,
+          hasDashed: false,
           hasAttacked: true,
           effectUsed: false,
         };
@@ -253,17 +274,25 @@ export default class EventProcessor {
           base_health: 4,
           movement: {
             range: 1,
+            haste: false,
+            dash: 0,
             special: {
               aquatic: false,
               flying: false,
               jump: false,
             },
           },
+          taunt: false,
+          divine: false,
+          protection: false,
           ranged: false,
           hasMoved: params.hasMoved,
+          hasDashed: false,
           hasAttacked: params.hasAttacked,
           effectUsed: false,
         };
+      default:
+        return {};
     }
   }
 

@@ -25,6 +25,7 @@ const Card = (props) => {
     <div className={props.classname} onClick={clickAction}>
       <img
         id={props.index}
+        alt=""
         src={images[props.data.id]}
         width={props.width}
         height={props.height}

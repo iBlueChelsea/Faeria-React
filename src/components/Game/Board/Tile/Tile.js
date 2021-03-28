@@ -51,7 +51,8 @@ const Tile = (props) => {
       <Occupant
         tile={props.id}
         x={startPosX + hexSize * 0.5}
-        y={parseInt(startPosY) + 9}
+        y={startPosY + Math.sqrt(3) * hexSize * 0.125}
+        width={hexSize}
       />
     </React.Fragment>
   );

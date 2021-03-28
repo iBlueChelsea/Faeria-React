@@ -5,7 +5,7 @@ import "./Wheel.css";
 import {useStore} from '../../../hooks-store/store';
 
 const Wheel = (props) => {
-  const [state,dispatch] = useStore();
+  const state = useStore()[0];
 
   const user = 'player1';
 

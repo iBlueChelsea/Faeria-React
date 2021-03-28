@@ -4,7 +4,7 @@ import Well from "./Well/Well";
 import God from "./God/God";
 
 const Board = (props) => {
-  const hexSize = 50;
+  const hexSize = 60;
   const boardMaxHeight = 6;
   const godMaxHeight = boardMaxHeight + 1;
   const boardTilesMap = { A: 2, B: 5, C: 6, D: 5, E: 6, F: 5, G: 2 };
@@ -101,7 +101,7 @@ const Board = (props) => {
   });
 
   return (
-    <div style={{ justifyContent: "center", display: "flex"}}>
+    <div style={{width: "60vw", justifyContent: "center", display: "flex"}}>
       <svg width={hexSize*1.5*Object.keys(boardTilesMap).length+hexSize*0.5} height={Math.sqrt(3) * hexSize * godMaxHeight}>
         {tiles}
         {wells}

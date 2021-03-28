@@ -29,6 +29,7 @@ import image27 from './mushroom_cheek.jpg'
 import image28 from './cheekshrooms.jpg'
 import image29 from './cheektree_giant.jpg'
 import image30 from './cheekworld_tree.jpg'
+import image31 from './cheek_shaman.jpg'
 
 const images = {
     0: image0,
@@ -62,6 +63,7 @@ const images = {
     28: image28,
     29: image29,
     30: image30,
+    31: image31,
 }
 
 export default images;

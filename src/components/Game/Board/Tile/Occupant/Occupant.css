@@ -30,7 +30,7 @@
 }
 
 .creature-enemy {
-    stroke:rgb(51, 51, 51);
+    stroke:rgb(20, 20, 20);
     stroke-width: 3px;
 }
 
@@ -59,4 +59,21 @@
     font-size: large;
     font-weight: bold;
     text-anchor: middle;
+}
+
+.enemy-icon {
+    stroke:rgb(20, 20, 20);
+    stroke-width: 1px;
+}
+
+.protection {
+    fill: rgba(255, 255, 255, 0.3);
+    stroke: rgba(255, 255, 255, 0.6);
+    stroke-width: 2px;
+}
+
+.divine {
+    fill: rgba(129, 167, 202, 0.3);
+    stroke: rgba(255, 255, 255, 0.6);
+    stroke-width: 2px;
 }

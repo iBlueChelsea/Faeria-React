@@ -8,19 +8,20 @@ import {useStore} from "../../hooks-store/store";
 
 const Game = () => {
   const [state, dispatch] = useStore();
-  const user = 'player1';
+  const user = "player1";
+  const opponent = "player2";
   
   useEffect(() => {
     //dispatch('GET_DATA',react_state);
     dispatch('SHUFFLE_DECK',user);
-  },[]);
+  },[]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const mulligan = (state.data[user].mulligan) ? <MulliganModal /> : null;
 
   return (
-    <div style={{display: "flex" }}>
+    <div style={{display: "flex", height: "100vh" }}>
       {mulligan}
-      <div style={{width: "100%", position: "relative", display: "flex", justifyContent: "center", flexWrap: "wrap"}}>
+      <div style={{width: "20vw", position: "relative", display: "flex", justifyContent: "center", flexWrap: "wrap"}}>
         <Infobox 
           align="flex-start"
           data={state.data.player2}
@@ -34,12 +35,12 @@ const Game = () => {
           player="player1"
         />
       </div>
-      <div style={{width: "100%"}}>
-        <Hand data={state.data.player2} />
+      <div style={{width: "60vw", display: "flex", justifyContent: "center", flexWrap: "wrap"}}>
+        <Hand data={state.data[opponent]} owner={opponent} height="30px" align="flex-start" />
         <Board data={state.data.board} />
-        <Hand data={state.data.player1} />
+        <Hand data={state.data[user]} owner={user} height="inherit" align="flex-end"/>
       </div>
-      <div style={{width: "100%", position: "relative"}}>
+      <div style={{width: "20vw", position: "relative", display: "flex", justifyContent: "center", flexWrap: "wrap"}}>
         <Wheel />
       </div>
     </div>

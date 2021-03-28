@@ -3,7 +3,7 @@ import Card from "./Card/Card";
 import { useStore } from "../../../hooks-store/store";
 
 const Hand = (props) => {
-  const [state, dispatch] = useStore();
+  const state = useStore()[0];
 
   const cards = props.data.hand.map((id, index) => {
     const cardClass = state.hand[index + 1].selected ? "-selected" : "";
@@ -23,10 +23,11 @@ const Hand = (props) => {
   return (
     <div
       style={{
-        width: "1134px",
-        height: "166px",
+        width: "60vw",
+        height: props.height,
         justifyContent: "center",
         display: "flex",
+        alignSelf: props.align,
       }}
     >
       {cards}
