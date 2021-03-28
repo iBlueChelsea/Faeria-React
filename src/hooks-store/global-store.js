@@ -365,6 +365,15 @@ const configureStore = () => {
       updatedState = EP.handleEventLogic();
       return updatedState;
     },
+    PROCESS_GIFT_OCCUPANT: (currentState, data) => {
+      let updatedState = JSON.parse(JSON.stringify(currentState));
+      const selected_occupant_id = Object.keys(updatedState.tiles).filter(
+        (key) => updatedState.tiles[key].occupantSelected
+      )[0];
+      const EP = new EventProcessor(updatedState, data);
+      updatedState = EP.processGiftEffect(selected_occupant_id);
+      return updatedState;
+    },
     SUMMON_CREATURE: (currentState, data) => {
       const updatedState = JSON.parse(JSON.stringify(currentState));
       const newOccupant = updatedState.data.board.tiles[data.tile_id].occupant;
@@ -392,6 +401,7 @@ const configureStore = () => {
       newOccupant.protection = card.protection;
       newOccupant.ranged = card.ranged;
       newOccupant.hasDashed = false;
+      newOccupant.effects = card.effects;
       if (!card.movement.haste) {
         newOccupant.hasMoved = true;
         newOccupant.hasAttacked = true;
@@ -414,24 +424,36 @@ const configureStore = () => {
         }
       }
       updatedState.data.board.tiles[data.tile_id].occupant = newOccupant;
-      Object.keys(updatedState.tiles).forEach((key) => {
-        updatedState.tiles[key].selectable = false;
-        updatedState.tiles[key].occupantSelectable = true;
-      });
       const newHand = updatedState.hand;
       newHand[selected_card_id].selected = !newHand[selected_card_id].selected;
-      Object.keys(newHand).forEach((key) => {
-        newHand[key].selectable = true;
-      });
-      updatedState.hand = newHand;
-      if (updatedState.data[data.player].wheel_neutral_counter !== 1) {
-        Object.keys(updatedState.wheelbuttons).forEach((key) => {
-          updatedState.wheelbuttons[key].selectable = true;
-        });
-      } else {
-        updatedState.wheelbuttons["wheel-B2"].selectable = true;
+      if (newOccupant.effects.summon) {
+        const EP = new EventProcessor(updatedState, data);
+        EP.processSummonEffect(
+          updatedState.data.board.tiles[data.tile_id].occupant
+        );
       }
-      updatedState.currentAction = "";
+      if (newOccupant.effects.gift) {
+        const EP = new EventProcessor(updatedState, data);
+        newHand[selected_card_id].selectable = false;
+        EP.initGiftEffect(updatedState.data.board.tiles[data.tile_id].occupant);
+      } else {
+        Object.keys(updatedState.tiles).forEach((key) => {
+          updatedState.tiles[key].selectable = false;
+          updatedState.tiles[key].occupantSelectable = true;
+        });
+        Object.keys(newHand).forEach((key) => {
+          newHand[key].selectable = true;
+        });
+        if (updatedState.data[data.player].wheel_neutral_counter !== 1) {
+          Object.keys(updatedState.wheelbuttons).forEach((key) => {
+            updatedState.wheelbuttons[key].selectable = true;
+          });
+        } else {
+          updatedState.wheelbuttons["wheel-B2"].selectable = true;
+        }
+        updatedState.currentAction = "";
+      }
+      updatedState.hand = newHand;
       updatedState.data[data.player].faeria -=
         updatedState.data[data.player].cards[
           updatedState.data[data.player].hand[selected_card_id - 1]
@@ -887,6 +909,7 @@ const configureStore = () => {
         hasMoved: false,
         hasDashed: false,
         hasAttacked: false,
+        effects: { summon: false, gift: false, lastword: false },
         effectUsed: false,
       };
       updatedState.data.board.tiles[selected_tile_id].occupant = removeOccupant;
@@ -994,6 +1017,7 @@ const configureStore = () => {
         hasMoved: false,
         hasDashed: false,
         hasAttacked: false,
+        effects: { summon: false, gift: false, lastword: false },
         effectUsed: false,
       };
       if (
@@ -1013,6 +1037,13 @@ const configureStore = () => {
         attacker.health > 0 ? attacker : removeOccupant;
       updatedState.data.board.tiles[data.tile_id].occupant =
         defender.health > 0 ? defender : removeOccupant;
+      const EP = new EventProcessor(updatedState, data);
+      if (attacker.health <= 0 && attacker.effects.lastword) {
+        EP.processLastwordEffect(attacker, selected_occupant_id);
+      }
+      if (defender.health <= 0 && defender.effects.lastword) {
+        EP.processLastwordEffect(defender, data.tile_id);
+      }
       if (updatedState.data[data.player].wheel_neutral_counter !== 1) {
         Object.keys(updatedState.wheelbuttons).forEach((key) => {
           updatedState.wheelbuttons[key].selectable = true;
@@ -1069,18 +1100,6 @@ const configureStore = () => {
       const updatedState = JSON.parse(JSON.stringify(currentState));
       updatedState.data[data.player].wheel_used = false;
       updatedState.data[data.player].faeria += 3;
-      const anyAdjacent = (tile) =>
-        updatedState.data.board.tiles[tile].occupant.player === data.player;
-      Object.keys(updatedState.data.board.wells).forEach((key) => {
-        if (updatedState.data.board.wells[key].adjacent.some(anyAdjacent)) {
-          updatedState.data.board.wells[key].available = false;
-          updatedState.data.board.wells[key].collected = true;
-          updatedState.data[data.player].faeria += 1;
-        } else {
-          updatedState.data.board.wells[key].available = true;
-          updatedState.data.board.wells[key].collected = false;
-        }
-      });
       const god = {
         player1: "D6",
         player2: "D0",
@@ -1130,6 +1149,7 @@ const configureStore = () => {
         hasMoved: false,
         hasDashed: false,
         hasAttacked: false,
+        effects: { summon: false, gift: false, lastword: false },
         effectUsed: false,
       };
       Object.keys(updatedState.data.board.tiles).forEach((key) => {
@@ -1138,18 +1158,34 @@ const configureStore = () => {
             .aquatic &&
             !updatedState.data.board.tiles[key].occupant.movement.special
               .flying &&
+            updatedState.data.board.tiles[key].occupant.player ===
+              data.player &&
             updatedState.data.board.tiles[key].type !== "lake" &&
             updatedState.data.board.tiles[key].type !== "none") ||
           (!updatedState.data.board.tiles[key].occupant.movement.special
             .aquatic &&
             !updatedState.data.board.tiles[key].occupant.movement.special
               .flying &&
+            updatedState.data.board.tiles[key].occupant.player ===
+              data.player &&
             updatedState.data.board.tiles[key].type === "none")
         ) {
           updatedState.data.board.tiles[key].occupant = removeOccupant;
         } else {
           updatedState.data.board.tiles[key].occupant.hasMoved = false;
           updatedState.data.board.tiles[key].occupant.hasAttacked = false;
+        }
+      });
+      const anyAdjacent = (tile) =>
+        updatedState.data.board.tiles[tile].occupant.player === data.player;
+      Object.keys(updatedState.data.board.wells).forEach((key) => {
+        if (updatedState.data.board.wells[key].adjacent.some(anyAdjacent)) {
+          updatedState.data.board.wells[key].available = false;
+          updatedState.data.board.wells[key].collected = true;
+          updatedState.data[data.player].faeria += 1;
+        } else {
+          updatedState.data.board.wells[key].available = true;
+          updatedState.data.board.wells[key].collected = false;
         }
       });
       updatedState.data.status.turn += 1;
@@ -1590,15 +1626,16 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
           A2: {
-            type: "lake",
-            owner: "player2",
+            type: "none",
+            owner: "",
             occupant: {
               player: "player2",
-              id: 12,
+              id: 3,
               type: "",
               faeria_cost: 0,
               land_cost: {
@@ -1609,9 +1646,9 @@ const configureStore = () => {
                 wild: 0,
               },
               attack: 1,
-              base_attack: 1,
-              health: 1,
-              base_health: 1,
+              base_attack: 0,
+              health: 3,
+              base_health: 0,
               movement: {
                 range: 1,
                 haste: true,
@@ -1622,13 +1659,14 @@ const configureStore = () => {
                   jump: false,
                 },
               },
-              taunt: true,
-              divine: true,
-              protection: true,
+              taunt: false,
+              divine: false,
+              protection: false,
               ranged: false,
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: true },
               effectUsed: false,
             },
           },
@@ -1668,6 +1706,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -1707,6 +1746,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -1746,6 +1786,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -1785,6 +1826,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -1824,6 +1866,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -1863,6 +1906,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -1902,6 +1946,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -1941,6 +1986,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -1980,6 +2026,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -2019,6 +2066,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -2058,6 +2106,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -2097,6 +2146,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -2136,6 +2186,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -2175,6 +2226,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -2214,6 +2266,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -2253,6 +2306,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -2292,6 +2346,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -2331,6 +2386,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -2370,6 +2426,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -2409,6 +2466,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -2448,6 +2506,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -2487,6 +2546,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -2526,6 +2586,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -2565,6 +2626,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -2604,6 +2666,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -2643,6 +2706,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -2682,6 +2746,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -2721,6 +2786,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -2760,6 +2826,7 @@ const configureStore = () => {
               hasMoved: false,
               hasDashed: false,
               hasAttacked: false,
+              effects: { summon: false, gift: false, lastword: false },
               effectUsed: false,
             },
           },
@@ -2854,7 +2921,7 @@ const configureStore = () => {
               },
             },
             ranged: false,
-            effects: [],
+            effects: { summon: false, gift: true, lastword: false },
           },
           2: {
             id: 1,
@@ -2874,7 +2941,7 @@ const configureStore = () => {
               },
             },
             ranged: false,
-            effects: [],
+            effects: { summon: false, gift: true, lastword: false },
           },
           3: {
             id: 1,
@@ -2894,7 +2961,7 @@ const configureStore = () => {
               },
             },
             ranged: false,
-            effects: [],
+            effects: { summon: false, gift: true, lastword: false },
           },
           4: {
             id: 2,
@@ -2974,7 +3041,7 @@ const configureStore = () => {
               },
             },
             ranged: false,
-            effects: [],
+            effects: { summon: false, gift: false, lastword: true },
           },
           8: {
             id: 3,
@@ -2994,7 +3061,7 @@ const configureStore = () => {
               },
             },
             ranged: false,
-            effects: [],
+            effects: { summon: false, gift: false, lastword: true },
           },
           9: {
             id: 3,
@@ -3014,7 +3081,7 @@ const configureStore = () => {
               },
             },
             ranged: false,
-            effects: [],
+            effects: { summon: false, gift: false, lastword: true },
           },
           10: {
             id: 4,
@@ -3028,7 +3095,7 @@ const configureStore = () => {
             movement: {
               range: 1,
               haste: true,
-              dash: 3,
+              dash: 0,
               special: {
                 aquatic: false,
                 flying: false,
@@ -3053,7 +3120,7 @@ const configureStore = () => {
             movement: {
               range: 1,
               haste: true,
-              dash: 3,
+              dash: 0,
               special: {
                 aquatic: false,
                 flying: false,
@@ -3078,7 +3145,7 @@ const configureStore = () => {
             movement: {
               range: 1,
               haste: true,
-              dash: 3,
+              dash: 0,
               special: {
                 aquatic: false,
                 flying: false,
@@ -3285,11 +3352,11 @@ const configureStore = () => {
               special: {
                 aquatic: false,
                 flying: false,
-                jump: false,
+                jump: true,
               },
             },
             ranged: false,
-            effects: [],
+            effects: { summon: true, gift: false, lastword: false },
           },
           23: {
             id: 8,
@@ -3305,11 +3372,11 @@ const configureStore = () => {
               special: {
                 aquatic: false,
                 flying: false,
-                jump: false,
+                jump: true,
               },
             },
             ranged: false,
-            effects: [],
+            effects: { summon: true, gift: false, lastword: false },
           },
           24: {
             id: 8,
@@ -3325,11 +3392,11 @@ const configureStore = () => {
               special: {
                 aquatic: false,
                 flying: false,
-                jump: false,
+                jump: true,
               },
             },
             ranged: false,
-            effects: [],
+            effects: { summon: true, gift: false, lastword: false },
           },
           25: {
             id: 9,

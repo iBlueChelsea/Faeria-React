@@ -6,6 +6,8 @@ import "./Tile.css";
 const Tile = (props) => {
   const [state, dispatch] = useStore();
   const user = "player1";
+  const opponent = "player2";
+
   const extraclass = state.tiles[props.id].selectable
     ? "tile-selectable"
     : "tile-not-selectable";
@@ -28,7 +30,7 @@ const Tile = (props) => {
 
   const tileHandler = () => {
     if (state.tiles[props.id].selectable) {
-      const payload = { player: user, tile_id: props.id };
+      const payload = { player: user, opponent: opponent, tile_id: props.id };
       if (state.currentAction === "summon_creature") {
         dispatch("SUMMON_CREATURE", payload);
       } else if (state.currentAction === "occupant_selected") {

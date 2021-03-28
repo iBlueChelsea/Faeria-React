@@ -10,6 +10,15 @@ export default class EventProcessor {
       9: "processEvent_9",
       11: "processEvent_11",
     };
+    this.summonEffectLibrary = {
+      8: "processSummonEffect_8",
+    };
+    this.giftEffectLibrary = {
+      1: "processGiftEffect_1",
+    };
+    this.lastwordEffectLibrary = {
+      3: "processLastwordEffect_3",
+    };
   }
   initEventLogic() {
     const newHand = this.state.hand;
@@ -81,6 +90,35 @@ export default class EventProcessor {
     this.state.data[this.data.player].hand.splice(selected_card_id - 1, 1);
     return this.state;
   }
+  processSummonEffect(occupant) {
+    this[this.summonEffectLibrary[occupant.id]]();
+    return this.state;
+  }
+  initGiftEffect(occupant) {
+    this[this.giftEffectLibrary[occupant.id]]("init", occupant);
+    return this.state;
+  }
+  processGiftEffect(selected_occupant_id) {
+    const occupant = this.state.data.board.tiles[selected_occupant_id].occupant;
+    this[this.giftEffectLibrary[occupant.id]]("handle", selected_occupant_id);
+    this.state.tiles[selected_occupant_id].occupantSelected = false;
+    this.state.currentAction = "";
+    Object.keys(this.state.hand).forEach((key) => {
+      this.state.hand[key].selectable = true;
+    });
+    if (this.state.data[this.data.player].wheel_neutral_counter !== 1) {
+      Object.keys(this.state.wheelbuttons).forEach((key) => {
+        this.state.wheelbuttons[key].selectable = true;
+      });
+    } else {
+      this.state.wheelbuttons["wheel-B2"].selectable = true;
+    }
+    return this.state;
+  }
+  processLastwordEffect(occupant, tile) {
+    this[this.lastwordEffectLibrary[occupant.id]](occupant, tile);
+    return this.state;
+  }
 
   //HELPERS
 
@@ -105,8 +143,29 @@ export default class EventProcessor {
       }
     });
   }
-  setSelectStateForTiles() {}
-  setSelectStateForGods() {}
+
+  setSelectStateForConditionalOccupants(friendly, enemy, attack) {
+    const playerCheck = [];
+    if (friendly) {
+      playerCheck.push(this.data.player);
+    }
+    if (enemy) {
+      playerCheck.push(this.data.opponent);
+    }
+    Object.keys(this.state.data.board.tiles).forEach((key) => {
+      if (
+        playerCheck.includes(
+          this.state.data.board.tiles[key].occupant.player
+        ) &&
+        !this.state.data.board.tiles[key].occupant.divine &&
+        this.state.data.board.tiles[key].occupant.attack <= attack
+      ) {
+        this.state.tiles[key].occupantSelectable = true;
+      } else {
+        this.state.tiles[key].occupantSelectable = false;
+      }
+    });
+  }
   getSelectedCard() {
     return parseInt(
       Object.keys(this.state.hand).filter(
@@ -148,6 +207,7 @@ export default class EventProcessor {
       hasMoved: false,
       hasDashed: false,
       hasAttacked: false,
+      effects: { summon: false, gift: false, lastword: false },
       effectUsed: false,
     };
   }
@@ -259,6 +319,38 @@ export default class EventProcessor {
           hasMoved: true,
           hasDashed: false,
           hasAttacked: true,
+          effects: { summon: false, gift: false, lastword: false },
+          effectUsed: false,
+        };
+      case 12:
+        return {
+          player: params.player,
+          id: 12,
+          type: "creature",
+          faeria_cost: 2,
+          land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
+          attack: 1,
+          base_attack: 1,
+          health: 1,
+          base_health: 1,
+          movement: {
+            range: 1,
+            haste: false,
+            dash: 0,
+            special: {
+              aquatic: false,
+              flying: false,
+              jump: false,
+            },
+          },
+          taunt: true,
+          divine: true,
+          protection: true,
+          ranged: false,
+          hasMoved: true,
+          hasDashed: false,
+          hasAttacked: true,
+          effects: { summon: false, gift: false, lastword: false },
           effectUsed: false,
         };
       case 13:
@@ -289,6 +381,7 @@ export default class EventProcessor {
           hasMoved: params.hasMoved,
           hasDashed: false,
           hasAttacked: params.hasAttacked,
+          effects: { summon: false, gift: false, lastword: false },
           effectUsed: false,
         };
       default:
@@ -337,6 +430,9 @@ export default class EventProcessor {
         Math.floor(target.attack / 2) >= 0 ? Math.floor(target.attack / 2) : 0;
       this.state.data.board.tiles[this.data.tile_id].occupant =
         target.health > 0 ? target : this.getRemoveOccupant();
+      if (target.health <= 0 && target.effects.lastword) {
+        this.processLastwordEffect(target, this.data.tile_id);
+      }
     }
   }
 
@@ -409,6 +505,55 @@ export default class EventProcessor {
             }
           );
         });
+    }
+  }
+
+  //Creatures - Summon Effects
+
+  //8 - Cheek lord
+  processSummonEffect_8() {
+    const anyAdjacentOccupant = (tile) =>
+      this.state.data.board.tiles[tile].occupant.player === this.data.player &&
+      this.state.data.board.tiles[tile].occupant.land_cost.lake > 0;
+    if (
+      this.state.tiles[this.data.tile_id].adjacent.some(anyAdjacentOccupant)
+    ) {
+      this.state.data.board.tiles[this.data.tile_id].occupant.attack++;
+      this.state.data.board.tiles[this.data.tile_id].occupant.health++;
+    }
+  }
+
+  //Creatures - Lastword Effects
+
+  //3 - Clamcheek
+  processLastwordEffect_3(occupant, tile) {
+    this.state.data.board.tiles[tile].occupant = this.getOccupantByID(12, {
+      player: occupant.player,
+    });
+  }
+
+  //Creatures - Gift Effects
+
+  //1 - Mercheek
+  processGiftEffect_1(process, selected_occupant_id) {
+    if (process === "init") {
+      this.setSelectStateForConditionalOccupants(false, true, 2);
+      this.setSelectStateForAllTiles(false);
+      this.state.tiles[this.data.tile_id].occupantSelected = true;
+      this.state.tiles[this.data.tile_id].occupantSelectable = true;
+      this.state.currentAction = "gift_occupant";
+    }
+    if (process === "handle") {
+      if (this.data.tile_id !== selected_occupant_id) {
+        this.state.data.board.tiles[
+          this.data.tile_id
+        ].occupant.player = this.data.player;
+        this.state.data.board.tiles[this.data.tile_id].occupant.hasMoved = true;
+        this.state.data.board.tiles[
+          this.data.tile_id
+        ].occupant.hasAttacked = true;
+      }
+      this.setSelectStateForOccupants(true, false);
     }
   }
 }

@@ -58,8 +58,8 @@ const Occupant = (props) => {
   const icon_flying = state.data.board.tiles[props.tile].occupant.movement
     .special.flying ? (
     <rect
-      x={props.x - 10}
-      y={props.y + 30}
+      x={props.x + 20}
+      y={props.y + 45}
       rx="5"
       ry="5"
       width="20"
@@ -71,8 +71,8 @@ const Occupant = (props) => {
     !icon_flying &&
     state.data.board.tiles[props.tile].occupant.movement.special.aquatic ? (
       <rect
-        x={props.x - 10}
-        y={props.y + 30}
+        x={props.x + 20}
+        y={props.y + 45}
         rx="5"
         ry="5"
         width="20"
@@ -121,7 +121,9 @@ const Occupant = (props) => {
   const occupantHandler = () => {
     if (state.tiles[props.tile].occupantSelectable) {
       const payload = { player: user, opponent: opponent, tile_id: props.tile };
-      if (state.currentAction === "event_occupant") {
+      if (state.currentAction === "gift_occupant") {
+        dispatch("PROCESS_GIFT_OCCUPANT", payload);
+      } else if (state.currentAction === "event_occupant") {
         dispatch("PROCESS_EVENT_OCCUPANT", payload);
       } else {
         if (state.data.board.tiles[props.tile].occupant.player === user) {
