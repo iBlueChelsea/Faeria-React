@@ -15,13 +15,13 @@ const Faeria = (props) => {
         <text
           x="50%"
           y="50%"
-          stroke= "#001920"
-          strokeWidth= "3px"
-          textAnchor= "middle"
+          stroke="#001920"
+          strokeWidth="3px"
+          textAnchor="middle"
           fontSize="50px"
           dy=".3em"
         >
-        {props.faeria}
+          {props.faeria}
         </text>
       </g>
     </svg>

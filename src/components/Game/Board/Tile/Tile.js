@@ -5,14 +5,13 @@ import "./Tile.css";
 
 const Tile = (props) => {
   const [state, dispatch] = useStore();
-  const user = "player1";
-  const opponent = "player2";
 
-  const extraclass = state.tiles[props.id].selectable
-    ? "tile-selectable"
-    : "tile-not-selectable";
+  const extraclass =
+    state.tiles[props.id].selectable && state.data.status.current === props.user
+      ? "tile-selectable"
+      : "tile-not-selectable";
   const tileclass =
-    state.data.board.tiles[props.id].owner !== user
+    state.data.board.tiles[props.id].owner !== props.user
       ? props.type + "-opponent"
       : props.type;
 
@@ -29,8 +28,15 @@ const Tile = (props) => {
   ].join(" ");
 
   const tileHandler = () => {
-    if (state.tiles[props.id].selectable) {
-      const payload = { player: user, opponent: opponent, tile_id: props.id };
+    if (
+      state.tiles[props.id].selectable &&
+      state.data.status.current === props.user
+    ) {
+      const payload = {
+        player: props.user,
+        opponent: props.opponent,
+        tile_id: props.id,
+      };
       if (state.currentAction === "summon_creature") {
         dispatch("SUMMON_CREATURE", payload);
       } else if (state.currentAction === "occupant_selected") {
@@ -55,6 +61,8 @@ const Tile = (props) => {
         x={startPosX + hexSize * 0.5}
         y={startPosY + Math.sqrt(3) * hexSize * 0.125}
         width={hexSize}
+        user={props.user}
+        opponent={props.opponent}
       />
     </React.Fragment>
   );

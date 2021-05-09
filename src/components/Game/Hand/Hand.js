@@ -6,16 +6,22 @@ const Hand = (props) => {
   const state = useStore()[0];
 
   const cards = props.data.hand.map((id, index) => {
-    const cardClass = state.hand[index + 1].selected ? "-selected" : "";
+    const cardClass =
+      state.hand[index + 1].selected && props.user === props.owner
+        ? "-selected"
+        : "";
     return (
       <Card
         key={id}
         id={id}
         index={index + 1}
         data={props.data.cards[id]}
-        height="160px"
+        height={props.height}
         width="120px"
         classname={"card" + cardClass}
+        user={props.user}
+        opponent={props.opponent}
+        owner={props.owner}
       />
     );
   });

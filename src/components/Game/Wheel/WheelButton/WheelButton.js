@@ -19,19 +19,20 @@ const WheelButton = (props) => {
     [startPosX, startPosY + Math.sqrt(3) * hexSize * 0.5].join(),
   ].join(" ");
 
-  const user = "player1";
-
   const selectHandler = () => {
     if (state.wheelbuttons[props.id].selectable) {
       switch (props.id) {
         case "wheel-B3":
-          dispatch("DRAW_CARD", user);
+          dispatch("DRAW_CARD", props.user);
           break;
         case "wheel-C2":
-          dispatch("PLUS_FAERIA", user);
+          dispatch("PLUS_FAERIA", props.user);
           break;
         default:
-          dispatch("SELECT_LAND", { player: user, wheelbutton_id: props.id });
+          dispatch("SELECT_LAND", {
+            player: props.user,
+            wheelbutton_id: props.id,
+          });
       }
     }
   };

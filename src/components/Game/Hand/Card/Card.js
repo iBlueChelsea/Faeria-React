@@ -5,13 +5,20 @@ import { useStore } from "../../../../hooks-store/store";
 
 const Card = (props) => {
   const [state, dispatch] = useStore();
-  const user = "player1";
-  const opponent = "player2";
 
   const cardHandler = () => {
-    if (state.hand[props.index].selectable && state.data[user].cards[props.id].faeria_cost <= state.data[user].faeria) {
-      const payload = { player: user, opponent: opponent, hand_id: props.index, card_id: props.id };
-      if (state.data[user].cards[props.id].type === 'event') {
+    if (
+      state.hand[props.index].selectable &&
+      state.data[props.user].cards[props.id].faeria_cost <=
+        state.data[props.user].faeria
+    ) {
+      const payload = {
+        player: props.user,
+        opponent: props.opponent,
+        hand_id: props.index,
+        card_id: props.id,
+      };
+      if (state.data[props.user].cards[props.id].type === "event") {
         dispatch("SELECT_EVENT", payload);
       } else {
         dispatch("SELECT_CARD", payload);
@@ -19,16 +26,25 @@ const Card = (props) => {
     }
   };
 
-  const clickAction = (state.currentAction === "mulligan") ? props.clickAction : cardHandler;
+  const cardDisabled = () => {};
+
+  const clickAction = state.data[props.user].mulligan
+    ? props.clickAction
+    : state.data.status.current !== props.user || props.owner !== props.user
+    ? cardDisabled
+    : cardHandler;
+
+  const imgSrc =
+    props.owner === props.opponent ? images["cardback"] : images[props.data.id];
 
   return (
     <div className={props.classname} onClick={clickAction}>
       <img
         id={props.index}
         alt=""
-        src={images[props.data.id]}
+        src={imgSrc}
         width={props.width}
-        height={props.height}
+        height={parseInt(props.height) - 6 + "px"}
       ></img>
     </div>
   );

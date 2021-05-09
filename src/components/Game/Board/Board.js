@@ -7,18 +7,26 @@ const Board = (props) => {
   const hexSize = 60;
   const boardMaxHeight = 6;
   const godMaxHeight = boardMaxHeight + 1;
-  const boardTilesMap = { A: 2, B: 5, C: 6, D: 5, E: 6, F: 5, G: 2 };
-  const wellPositions = { A: [0, 3], G: [0, 3] };
-  const godPositions = { D: [0, 6] };
+  const boardTilesMap =
+    props.user === "player2"
+      ? { G: 2, F: 5, E: 6, D: 5, C: 6, B: 5, A: 2 }
+      : { A: 2, B: 5, C: 6, D: 5, E: 6, F: 5, G: 2 };
+  const wellPositions =
+    props.user === "player2"
+      ? { G: [3, 0], A: [3, 0] }
+      : { A: [0, 3], G: [0, 3] };
+  const godPositions = props.user === "player2" ? { D: [6, 0] } : { D: [0, 6] };
 
   const tiles = Object.keys(boardTilesMap).map((column, i) => {
     return [...Array(boardTilesMap[column])].map((_, j) => {
       let parity = i % 2 === 0;
+      let columnNr =
+        props.user === "player2" ? boardTilesMap[column] - j : j + 1;
       return (
         <Tile
-          key={column + (j + 1)}
-          id={column + (j + 1)}
-          type={props.data.tiles[column + (j + 1)].type}
+          key={column + columnNr}
+          id={column + columnNr}
+          type={props.data.tiles[column + columnNr].type}
           hexSize={hexSize}
           startPosX={hexSize * i * 1.5}
           startPosY={
@@ -29,6 +37,8 @@ const Board = (props) => {
                 Math.sqrt(3) * hexSize * 0.5
               : Math.sqrt(3) * hexSize * j + Math.sqrt(3) * hexSize
           }
+          user={props.user}
+          opponent={props.opponent}
         />
       );
     });
@@ -51,15 +61,15 @@ const Board = (props) => {
               ? (boardMaxHeight -
                   boardTilesMap[column] -
                   wellPositions[column].length +
-                  wellPositions[column][i]) *
-                  Math.sqrt(3) *
-                  hexSize
+                  [0, 3][i]) *
+                Math.sqrt(3) *
+                hexSize
               : (boardMaxHeight -
                   boardTilesMap[column] -
                   wellPositions[column].length +
-                  wellPositions[column][i]) *
-                Math.sqrt(3) *
-                hexSize +
+                  [0, 3][i]) *
+                  Math.sqrt(3) *
+                  hexSize +
                 Math.sqrt(3) * hexSize * 0.5
           }
         />
@@ -84,25 +94,31 @@ const Board = (props) => {
               ? (godMaxHeight -
                   boardTilesMap[column] -
                   godPositions[column].length +
-                  godPositions[column][i]) *
-                  Math.sqrt(3) *
-                  hexSize
+                  [0, 6][i]) *
+                Math.sqrt(3) *
+                hexSize
               : (godMaxHeight -
                   boardTilesMap[column] -
                   godPositions[column].length +
-                  godPositions[column][i]) *
+                  [0, 6][i]) *
                   Math.sqrt(3) *
                   hexSize +
                 Math.sqrt(3) * hexSize * 0.5
           }
+          user={props.user}
         />
       );
     });
   });
 
   return (
-    <div style={{width: "60vw", justifyContent: "center", display: "flex"}}>
-      <svg width={hexSize*1.5*Object.keys(boardTilesMap).length+hexSize*0.5} height={Math.sqrt(3) * hexSize * godMaxHeight}>
+    <div style={{ width: "60vw", justifyContent: "center", display: "flex" }}>
+      <svg
+        width={
+          hexSize * 1.5 * Object.keys(boardTilesMap).length + hexSize * 0.5
+        }
+        height={Math.sqrt(3) * hexSize * godMaxHeight}
+      >
         {tiles}
         {wells}
         {gods}

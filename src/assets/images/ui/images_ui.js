@@ -1,9 +1,6 @@
-import pluscard from './plus_card.png'
-import pluscheekia from './plus_cheekia.png'
-
 const images_ui = {
-    'wheel-B3': pluscard,
-    'wheel-C2': pluscheekia,
+    'wheel-B3': 'assets/images/ui/pluscard.png',
+    'wheel-C2': 'assets/images/ui/pluscheekia.png',
 }
 
 export default images_ui;

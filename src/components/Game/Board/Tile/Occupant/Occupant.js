@@ -6,8 +6,6 @@ import icons from "../../../../../assets/images/ui/icons";
 
 const Occupant = (props) => {
   const [state, dispatch] = useStore();
-  const user = "player1";
-  const opponent = "player2";
 
   const points_divine = [
     [props.x + 30, props.y - 10].join(),
@@ -16,21 +14,22 @@ const Occupant = (props) => {
   ].join(" ");
 
   const occupantClass =
-    state.data.board.tiles[props.tile].occupant.player === user
-      ? state.tiles[props.tile].occupantSelectable
+    state.data.board.tiles[props.tile].occupant.player === props.user
+      ? state.tiles[props.tile].occupantSelectable &&
+        state.data.status.current === props.user
         ? "friendly-selectable"
         : "friendly"
       : state.tiles[props.tile].occupantSelectable
       ? "enemy-selectable"
       : "enemy";
   const creatureClass =
-    state.data.board.tiles[props.tile].occupant.player === user
+    state.data.board.tiles[props.tile].occupant.player === props.user
       ? state.tiles[props.tile].occupantSelected
         ? "creature-selected"
         : "creature"
       : "creature-enemy";
   const iconClass =
-    state.data.board.tiles[props.tile].occupant.player === user
+    state.data.board.tiles[props.tile].occupant.player === props.user
       ? "friendly"
       : "enemy";
   const icon_taunt = state.data.board.tiles[props.tile].occupant.taunt ? (
@@ -119,14 +118,21 @@ const Occupant = (props) => {
   ) : null;
 
   const occupantHandler = () => {
-    if (state.tiles[props.tile].occupantSelectable) {
-      const payload = { player: user, opponent: opponent, tile_id: props.tile };
+    if (
+      state.tiles[props.tile].occupantSelectable &&
+      state.data.status.current === props.user
+    ) {
+      const payload = {
+        player: props.user,
+        opponent: props.opponent,
+        tile_id: props.tile,
+      };
       if (state.currentAction === "gift_occupant") {
         dispatch("PROCESS_GIFT_OCCUPANT", payload);
       } else if (state.currentAction === "event_occupant") {
         dispatch("PROCESS_EVENT_OCCUPANT", payload);
       } else {
-        if (state.data.board.tiles[props.tile].occupant.player === user) {
+        if (state.data.board.tiles[props.tile].occupant.player === props.user) {
           dispatch("SELECT_OCCUPANT", payload);
         } else if (state.currentAction === "occupant_selected") {
           dispatch("ATTACK_OCCUPANT", payload);

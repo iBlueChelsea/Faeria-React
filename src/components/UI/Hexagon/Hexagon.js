@@ -13,12 +13,7 @@ const Hexagon = (props) => {
     [startPosX, startPosY + Math.sqrt(3) * hexSize * 0.5].join(),
   ].join(" ");
 
-  return (
-    <polygon
-      className={props.className}
-      points={points}
-    />
-  );
+  return <polygon className={props.className} points={points} />;
 };
 
 export default Hexagon;

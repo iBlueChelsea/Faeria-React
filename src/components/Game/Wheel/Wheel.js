@@ -2,12 +2,10 @@ import React from "react";
 import WheelButton from "./WheelButton/WheelButton";
 import EndTurnButton from "../../UI/EndTurnButton/EndTurnButton";
 import "./Wheel.css";
-import {useStore} from '../../../hooks-store/store';
+import { useStore } from "../../../hooks-store/store";
 
 const Wheel = (props) => {
   const state = useStore()[0];
-
-  const user = 'player1';
 
   const hexSize = 40;
   const boardTilesMap = { A: 2, B: 3, C: 2 };
@@ -39,12 +37,26 @@ const Wheel = (props) => {
                 offsetY
               : Math.sqrt(3) * hexSize * j + Math.sqrt(3) * hexSize + offsetY
           }
+          user={props.user}
         />
       );
     });
   });
 
-  const wheelOutput = (!state.data[user].wheel_used) ? wheel : <EndTurnButton />;
+  const wheelOutput = !state.data[props.user].wheel_used ? (
+    wheel
+  ) : (
+    <EndTurnButton
+      data={props.data}
+      user={props.user}
+      opponent={props.opponent}
+      id={props.id}
+    />
+  );
+  const strokeColor =
+    props.data.current === props.opponent ? "#962d3e" : "#00FA9A";
+  const fillColor =
+    props.data.current === props.opponent ? "#262626" : "#2F4F4F";
 
   return (
     <div
@@ -61,9 +73,9 @@ const Wheel = (props) => {
           cx="150"
           cy="150"
           r="145"
-          stroke="#00FA9A"
+          stroke={strokeColor}
           strokeWidth="5"
-          fill="#2F4F4F"
+          fill={fillColor}
         />
         {wheelOutput}
       </svg>

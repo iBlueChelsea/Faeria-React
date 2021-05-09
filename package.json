@@ -3,18 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@testing-library/jest-dom": "^5.11.5",
-    "@testing-library/react": "^11.1.0",
-    "@testing-library/user-event": "^12.1.10",
-    "react": "^17.0.1",
-    "react-dom": "^17.0.1",
+    "@testing-library/jest-dom": "^5.12.0",
+    "@testing-library/react": "^11.2.6",
+    "@testing-library/user-event": "^12.8.3",
+    "axios": "^0.21.1",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
     "react-scripts": "4.0.0",
     "web-vitals": "^0.2.4"
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
+    "build": "react-scripts build && npm run build:clean",
+    "build:clean": "cd build &&  mv static/js/main.*.js main.js &&  mv static/js/*.chunk.js chunk.js &&  mv static/js/runtime*.js runtime.js && rm -rf C:/MAMP/htdocs/Faeria/Faeria/modules/Game/js/* && cp main.js C:/MAMP/htdocs/Faeria/Faeria/modules/Game/js/main.js &&  cp static/js/main.*.js.map C:/MAMP/htdocs/Faeria/Faeria/modules/Game/js/ &&  cp chunk.js C:/MAMP/htdocs/Faeria/Faeria/modules/Game/js/chunk.js &&  cp static/js/*.chunk.js.map C:/MAMP/htdocs/Faeria/Faeria/modules/Game/js/ && cp runtime.js C:/MAMP/htdocs/Faeria/Faeria/modules/Game/js/runtime.js && cp static/js/runtime*.js.map C:/MAMP/htdocs/Faeria/Faeria/modules/Game/js/ &&  mv static/css/main.*.css main.css && rm -rf C:/MAMP/htdocs/Faeria/Faeria/modules/Game/css/* && cp main.css C:/MAMP/htdocs/Faeria/Faeria/modules/Game/css/main.css &&  cp static/css/main.*.css.map C:/MAMP/htdocs/Faeria/Faeria/modules/Game/css/",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {

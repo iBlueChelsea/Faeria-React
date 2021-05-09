@@ -1,20 +1,22 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import './index.css';
-import App from './App';
-import reportWebVitals from './reportWebVitals';
-import configureStore from './hooks-store/global-store';
+import React from "react";
+import ReactDOM from "react-dom";
+import "./index.css";
+import App from "./App";
+import configureStore from "./hooks-store/global-store";
+import axios from "axios";
 
-configureStore();
-
-ReactDOM.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-  document.getElementById('root')
-);
-
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
+let loadStore = {};
+const formdata = new FormData();
+formdata.append("id", document.getElementById("game_id").value);
+axios
+  .post("http://localhost/faeria/Faeria/utils/getState.php", formdata)
+  .then((res) => {
+    loadStore = JSON.parse(res.data);
+    configureStore(loadStore);
+    ReactDOM.render(
+      <React.StrictMode>
+        <App />
+      </React.StrictMode>,
+      document.getElementById("game")
+    );
+  });

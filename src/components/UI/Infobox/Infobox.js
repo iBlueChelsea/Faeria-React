@@ -5,7 +5,7 @@ import Hexagon from "../Hexagon/Hexagon";
 import "./Infobox.css";
 
 const Infobox = (props) => {
-  const landCount = getLandCount(props.tiles,props.player);
+  const landCount = getLandCount(props.tiles, props.player);
   const align = props.align;
   const hexSize = 20;
   const landCounter = Object.keys(landCount).map((column, i) => {
@@ -41,9 +41,7 @@ const Infobox = (props) => {
   );
   const info_faeria = (
     <div style={{ display: "flex", justifyContent: "center" }}>
-      <Faeria 
-      faeria = {props.data.faeria}
-      />
+      <Faeria faeria={props.data.faeria} />
     </div>
   );
   const info_player = (
@@ -65,16 +63,16 @@ const Infobox = (props) => {
         {info_landcounter}
         {info_faeria}
         {info_player}
-        <Deck 
-        deckcounter = {props.data.deck.length}
-        handcounter = {props.data.hand.length}
+        <Deck
+          deckcounter={props.data.deck.length}
+          handcounter={props.data.hand.length}
         />
       </React.Fragment>
     ) : (
       <React.Fragment>
-        <Deck 
-        deckcounter = {props.data.deck.length}
-        handcounter = {props.data.hand.length}
+        <Deck
+          deckcounter={props.data.deck.length}
+          handcounter={props.data.hand.length}
         />
         {info_player}
         {info_faeria}
@@ -93,11 +91,10 @@ const Infobox = (props) => {
   );
 };
 
-function getLandCount(tiles,player)
-{
+function getLandCount(tiles, player) {
   let lands = { f: 0, l: 0, m: 0, d: 0 };
-  Object.values(tiles).forEach(tile => {
-    if (tile.owner === player && tile.type.charAt(0) !== 'p') {
+  Object.values(tiles).forEach((tile) => {
+    if (tile.owner === player && tile.type.charAt(0) !== "p") {
       lands[tile.type.charAt(0)] += 1;
     }
   });

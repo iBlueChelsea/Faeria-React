@@ -1,27 +1,43 @@
 import { initStore } from "./store";
 import EventProcessor from "./event-processor";
+import axios from "axios";
 
-const configureStore = () => {
+const configureStore = (loadStore) => {
   const actions = {
-    GET_DATA: (currentState, data) => {
-      const updatedState = JSON.parse(JSON.stringify(currentState));
-      //axios get
-      updatedState.data = data;
+    SET_DATA: (currentState, data) => {
+      let updatedState = JSON.parse(JSON.stringify(currentState));
+      updatedState = data;
       return updatedState;
     },
-    SHUFFLE_DECK: (currentState, player) => {
+    SHUFFLE_DECK: (currentState, data) => {
       const updatedState = JSON.parse(JSON.stringify(currentState));
       updatedState.currentAction = "mulligan";
       const shuffledDeck = [];
-      for (let i = 0; i < currentState.data[player].deck.length; i++) {
+      for (let i = 0; i < currentState.data[data.player].deck.length; i++) {
         let random = Math.floor(
-          Math.random() * updatedState.data[player].deck.length
+          Math.random() * updatedState.data[data.player].deck.length
         );
-        shuffledDeck.push(updatedState.data[player].deck[random]);
-        updatedState.data[player].deck.splice(random, 1);
+        shuffledDeck.push(updatedState.data[data.player].deck[random]);
+        updatedState.data[data.player].deck.splice(random, 1);
       }
-      //axios post
-      updatedState.data[player].deck = shuffledDeck;
+      updatedState.data[data.player].deck = shuffledDeck;
+      updatedState.data[data.player].shuffle = true;
+      const newState = JSON.parse(JSON.stringify(updatedState));
+      const getdata = new FormData();
+      getdata.append("id", document.getElementById("game_id").value);
+      axios
+        .post("http://localhost/faeria/Faeria/utils/getState.php", getdata)
+        .then((res) => {
+          const prevState = JSON.parse(res.data);
+          newState.data[data.opponent] = prevState.data[data.opponent];
+          const postdata = new FormData();
+          postdata.append("react_state", JSON.stringify(newState));
+          postdata.append("id", data.id);
+          axios.post(
+            "http://localhost/faeria/Faeria/utils/saveState.php",
+            postdata
+          );
+        });
       return updatedState;
     },
     CONFIRM_MULLIGAN: (currentState, data) => {
@@ -62,12 +78,28 @@ const configureStore = () => {
         shuffledDeck.push(prevDeck[random]);
         prevDeck.splice(random, 1);
       }
-      if (data.player === "player1") {
+      if (data.player === "player2") {
         newHand.push(0);
       }
       updatedState.data[data.player].deck = shuffledDeck;
       updatedState.data[data.player].hand = newHand;
       updatedState.data[data.player].mulligan = false;
+      const newState = JSON.parse(JSON.stringify(updatedState));
+      const getdata = new FormData();
+      getdata.append("id", document.getElementById("game_id").value);
+      axios
+        .post("http://localhost/faeria/Faeria/utils/getState.php", getdata)
+        .then((res) => {
+          const prevState = JSON.parse(res.data);
+          newState.data[data.opponent] = prevState.data[data.opponent];
+          const postdata = new FormData();
+          postdata.append("react_state", JSON.stringify(newState));
+          postdata.append("id", data.id);
+          axios.post(
+            "http://localhost/faeria/Faeria/utils/saveState.php",
+            postdata
+          );
+        });
       return updatedState;
     },
     SELECT_LAND: (currentState, data) => {
@@ -162,12 +194,26 @@ const configureStore = () => {
         ].health_dmg;
       }
       updatedState.data[player].wheel_used = true;
+      const formdata = new FormData();
+      formdata.append("react_state", JSON.stringify(updatedState));
+      formdata.append("id", document.getElementById("game_id").value);
+      axios.post(
+        "http://localhost/faeria/Faeria/utils/saveState.php",
+        formdata
+      );
       return updatedState;
     },
     PLUS_FAERIA: (currentState, player) => {
       const updatedState = JSON.parse(JSON.stringify(currentState));
       updatedState.data[player].faeria++;
       updatedState.data[player].wheel_used = true;
+      const formdata = new FormData();
+      formdata.append("react_state", JSON.stringify(updatedState));
+      formdata.append("id", document.getElementById("game_id").value);
+      axios.post(
+        "http://localhost/faeria/Faeria/utils/saveState.php",
+        formdata
+      );
       return updatedState;
     },
     BUILD_TILE: (currentState, data) => {
@@ -201,6 +247,13 @@ const configureStore = () => {
         updatedState.data[data.player].wheel_used = true;
         updatedState.data[data.player].wheel_neutral_counter = 0;
       }
+      const formdata = new FormData();
+      formdata.append("react_state", JSON.stringify(updatedState));
+      formdata.append("id", document.getElementById("game_id").value);
+      axios.post(
+        "http://localhost/faeria/Faeria/utils/saveState.php",
+        formdata
+      );
       return updatedState;
     },
     SELECT_CARD: (currentState, data) => {
@@ -256,13 +309,64 @@ const configureStore = () => {
       };
       const landtypes = getLandTypes();
       const requirementsMet = (tile) => {
-        if (updatedState.data.board.tiles[tile].owner !== data.player) {
-          return false;
+        const canSpawnAdjacentToFriendliesArray = {
+          8: "lake", //Cheek lord
+        };
+        const canSpawnAdjacentToFriendlies = (adjTile) => {
+          return (
+            updatedState.data.board.tiles[adjTile].occupant.player ===
+              data.player &&
+            updatedState.data.board.tiles[adjTile].occupant.land_cost[
+              canSpawnAdjacentToFriendliesArray[
+                updatedState.data[data.player].cards[data.card_id].id
+              ]
+            ] > 0
+          );
+        };
+        if (
+          Object.keys(canSpawnAdjacentToFriendliesArray).includes(
+            String(updatedState.data[data.player].cards[data.card_id].id)
+          )
+        ) {
+          if (
+            !updatedState.tiles[tile].adjacent.some(
+              canSpawnAdjacentToFriendlies
+            )
+          ) {
+            return false;
+          }
+          if (
+            !updatedState.data[data.player].cards[data.card_id].movement.special
+              .aquatic &&
+            !updatedState.data[data.player].cards[data.card_id].movement.special
+              .flying
+          ) {
+            if (updatedState.data.board.tiles[tile].type === "none") {
+              return false;
+            }
+          }
+          if (
+            updatedState.data[data.player].cards[data.card_id].movement.special
+              .aquatic &&
+            !updatedState.data[data.player].cards[data.card_id].movement.special
+              .flying
+          ) {
+            if (
+              updatedState.data.board.tiles[tile].type !== "none" &&
+              updatedState.data.board.tiles[tile].type !== "lake"
+            ) {
+              return false;
+            }
+          }
+        } else {
+          if (updatedState.data.board.tiles[tile].owner !== data.player) {
+            return false;
+          }
+          if (!landtypes.includes(updatedState.data.board.tiles[tile].type)) {
+            return false;
+          }
         }
         if (updatedState.data.board.tiles[tile].occupant.player) {
-          return false;
-        }
-        if (!landtypes.includes(updatedState.data.board.tiles[tile].type)) {
           return false;
         }
         Object.keys(
@@ -357,12 +461,26 @@ const configureStore = () => {
       let updatedState = JSON.parse(JSON.stringify(currentState));
       const EP = new EventProcessor(updatedState, data);
       updatedState = EP.handleEventLogic();
+      const formdata = new FormData();
+      formdata.append("react_state", JSON.stringify(updatedState));
+      formdata.append("id", document.getElementById("game_id").value);
+      axios.post(
+        "http://localhost/faeria/Faeria/utils/saveState.php",
+        formdata
+      );
       return updatedState;
     },
     PROCESS_EVENT_TILE: (currentState, data) => {
       let updatedState = JSON.parse(JSON.stringify(currentState));
       const EP = new EventProcessor(updatedState, data);
       updatedState = EP.handleEventLogic();
+      const formdata = new FormData();
+      formdata.append("react_state", JSON.stringify(updatedState));
+      formdata.append("id", document.getElementById("game_id").value);
+      axios.post(
+        "http://localhost/faeria/Faeria/utils/saveState.php",
+        formdata
+      );
       return updatedState;
     },
     PROCESS_GIFT_OCCUPANT: (currentState, data) => {
@@ -372,6 +490,13 @@ const configureStore = () => {
       )[0];
       const EP = new EventProcessor(updatedState, data);
       updatedState = EP.processGiftEffect(selected_occupant_id);
+      const formdata = new FormData();
+      formdata.append("react_state", JSON.stringify(updatedState));
+      formdata.append("id", document.getElementById("game_id").value);
+      axios.post(
+        "http://localhost/faeria/Faeria/utils/saveState.php",
+        formdata
+      );
       return updatedState;
     },
     SUMMON_CREATURE: (currentState, data) => {
@@ -459,6 +584,13 @@ const configureStore = () => {
           updatedState.data[data.player].hand[selected_card_id - 1]
         ].faeria_cost;
       updatedState.data[data.player].hand.splice(selected_card_id - 1, 1);
+      const formdata = new FormData();
+      formdata.append("react_state", JSON.stringify(updatedState));
+      formdata.append("id", document.getElementById("game_id").value);
+      axios.post(
+        "http://localhost/faeria/Faeria/utils/saveState.php",
+        formdata
+      );
       return updatedState;
     },
     SELECT_OCCUPANT: (currentState, data) => {
@@ -974,6 +1106,13 @@ const configureStore = () => {
         updatedState.gods[god].selectable = false;
       });
       updatedState.currentAction = "";
+      const formdata = new FormData();
+      formdata.append("react_state", JSON.stringify(updatedState));
+      formdata.append("id", document.getElementById("game_id").value);
+      axios.post(
+        "http://localhost/faeria/Faeria/utils/saveState.php",
+        formdata
+      );
       return updatedState;
     },
     ATTACK_OCCUPANT: (currentState, data) => {
@@ -1060,6 +1199,13 @@ const configureStore = () => {
       });
       updatedState.tiles[selected_occupant_id].occupantSelected = false;
       updatedState.currentAction = "";
+      const formdata = new FormData();
+      formdata.append("react_state", JSON.stringify(updatedState));
+      formdata.append("id", document.getElementById("game_id").value);
+      axios.post(
+        "http://localhost/faeria/Faeria/utils/saveState.php",
+        formdata
+      );
       return updatedState;
     },
     ATTACK_GOD: (currentState, data) => {
@@ -1094,27 +1240,35 @@ const configureStore = () => {
         updatedState.data.status.finished = true;
         updatedState.data.status.winner = data.player;
       }
+      const formdata = new FormData();
+      formdata.append("react_state", JSON.stringify(updatedState));
+      formdata.append("id", document.getElementById("game_id").value);
+      axios.post(
+        "http://localhost/faeria/Faeria/utils/saveState.php",
+        formdata
+      );
       return updatedState;
     },
     END_TURN: (currentState, data) => {
       const updatedState = JSON.parse(JSON.stringify(currentState));
-      updatedState.data[data.player].wheel_used = false;
-      updatedState.data[data.player].faeria += 3;
+      updatedState.data[data.opponent].wheel_used = false;
+      updatedState.data[data.opponent].faeria += 3;
       const god = {
         player1: "D6",
         player2: "D0",
       };
-      if (updatedState.data[data.player].deck.length > 0) {
-        if (updatedState.data[data.player].hand.length < 9) {
-          updatedState.data[data.player].hand.push(
-            updatedState.data[data.player].deck.splice(0, 1)[0]
+      if (updatedState.data[data.opponent].deck.length > 0) {
+        if (updatedState.data[data.opponent].hand.length < 9) {
+          updatedState.data[data.opponent].hand.push(
+            updatedState.data[data.opponent].deck.splice(0, 1)[0]
           );
         } else {
-          updatedState.data[data.player].deck.splice(0, 1);
+          updatedState.data[data.opponent].deck.splice(0, 1);
         }
       } else {
-        updatedState.data.board.gods[god[data.player]].health -= ++updatedState
-          .data[data.player].health_dmg;
+        updatedState.data.board.gods[
+          god[data.opponent]
+        ].health -= ++updatedState.data[data.opponent].health_dmg;
       }
       const removeOccupant = {
         player: "",
@@ -1177,18 +1331,19 @@ const configureStore = () => {
         }
       });
       const anyAdjacent = (tile) =>
-        updatedState.data.board.tiles[tile].occupant.player === data.player;
+        updatedState.data.board.tiles[tile].occupant.player === data.opponent;
       Object.keys(updatedState.data.board.wells).forEach((key) => {
         if (updatedState.data.board.wells[key].adjacent.some(anyAdjacent)) {
           updatedState.data.board.wells[key].available = false;
           updatedState.data.board.wells[key].collected = true;
-          updatedState.data[data.player].faeria += 1;
+          updatedState.data[data.opponent].faeria += 1;
         } else {
           updatedState.data.board.wells[key].available = true;
           updatedState.data.board.wells[key].collected = false;
         }
       });
       updatedState.data.status.turn += 1;
+      updatedState.data.status.current = data.opponent;
 
       //Wheel
       Object.keys(updatedState.wheelbuttons).forEach((wheel) => {
@@ -1217,2614 +1372,18 @@ const configureStore = () => {
 
       updatedState.currentAction = "";
 
+      const formdata = new FormData();
+      formdata.append("react_state", JSON.stringify(updatedState));
+      formdata.append("id", document.getElementById("game_id").value);
+      axios.post(
+        "http://localhost/faeria/Faeria/utils/saveState.php",
+        formdata
+      );
+
       return updatedState;
     },
   };
-  initStore(actions, {
-    currentAction: "",
-    wheelbuttons: {
-      "wheel-A1": {
-        selectable: true,
-        selected: false,
-        action: "forest",
-      },
-      "wheel-A2": {
-        selectable: true,
-        selected: false,
-        action: "lake",
-      },
-      "wheel-B1": {
-        selectable: true,
-        selected: false,
-        action: "mountain",
-      },
-      "wheel-B2": {
-        selectable: true,
-        selected: false,
-        action: "prairie",
-      },
-      "wheel-B3": {
-        selectable: true,
-        selected: false,
-        action: "draw",
-      },
-      "wheel-C1": {
-        selectable: true,
-        selected: false,
-        action: "desert",
-      },
-      "wheel-C2": {
-        selectable: true,
-        selected: false,
-        action: "faeria",
-      },
-    },
-    hand: {
-      1: {
-        selectable: true,
-        selected: false,
-      },
-      2: {
-        selectable: true,
-        selected: false,
-      },
-      3: {
-        selectable: true,
-        selected: false,
-      },
-      4: {
-        selectable: true,
-        selected: false,
-      },
-      5: {
-        selectable: true,
-        selected: false,
-      },
-      6: {
-        selectable: true,
-        selected: false,
-      },
-      7: {
-        selectable: true,
-        selected: false,
-      },
-      8: {
-        selectable: true,
-        selected: false,
-      },
-      9: {
-        selectable: true,
-        selected: false,
-      },
-    },
-    tiles: {
-      A1: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["A2", "B2", "B3"],
-        adjacentNonTile: "A0",
-      },
-      A2: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["A1", "B3", "B4"],
-        adjacentNonTile: "A3",
-      },
-      B1: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["B2", "C1", "C2"],
-        adjacentNonTile: "A0",
-      },
-      B2: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["A1", "B1", "B3", "C2", "C3"],
-        adjacentNonTile: "A0",
-      },
-      B3: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["A1", "A2", "B2", "B4", "C3", "C4"],
-        adjacentNonTile: null,
-      },
-      B4: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["A2", "B3", "B5", "C4", "C5"],
-        adjacentNonTile: "A3",
-      },
-      B5: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["B4", "C5", "C6"],
-        adjacentNonTile: "A3",
-      },
-      C1: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["B1", "C2", "D1"],
-        adjacentNonTile: "D0",
-      },
-      C2: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["B1", "B2", "C1", "C3", "D1", "D2"],
-        adjacentNonTile: null,
-      },
-      C3: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["B2", "B3", "C2", "C4", "D2", "D3"],
-        adjacentNonTile: null,
-      },
-      C4: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["B3", "B4", "C3", "C5", "D3", "D4"],
-        adjacentNonTile: null,
-      },
-      C5: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["B4", "B5", "C4", "C6", "D4", "D5"],
-        adjacentNonTile: null,
-      },
-      C6: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["B5", "C5", "D5"],
-        adjacentNonTile: "D6",
-      },
-      D1: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["C1", "C2", "D2", "E1", "E2"],
-        adjacentNonTile: "D0",
-      },
-      D2: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["C2", "C3", "D1", "D3", "E2", "E3"],
-        adjacentNonTile: null,
-      },
-      D3: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["C3", "C4", "D2", "D4", "E3", "E4"],
-        adjacentNonTile: null,
-      },
-      D4: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["C4", "C5", "D3", "D5", "E4", "E5"],
-        adjacentNonTile: null,
-      },
-      D5: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["C5", "C6", "D4", "E5", "E6"],
-        adjacentNonTile: null,
-      },
-      E1: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["D1", "E2", "F1"],
-        adjacentNonTile: "D0",
-      },
-      E2: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["D1", "D2", "E1", "E3", "F1", "F2"],
-        adjacentNonTile: null,
-      },
-      E3: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["D2", "D3", "E2", "E4", "F2", "F3"],
-        adjacentNonTile: null,
-      },
-      E4: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["D3", "D4", "E3", "E5", "F3", "F4"],
-        adjacentNonTile: null,
-      },
-      E5: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["D4", "D5", "E4", "E6", "F4", "F5"],
-        adjacentNonTile: null,
-      },
-      E6: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["D5", "E5", "F5"],
-        adjacentNonTile: "D6",
-      },
-      F1: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["E1", "E2", "F2"],
-        adjacentNonTile: "G0",
-      },
-      F2: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["E2", "E3", "F1", "F3", "G1"],
-        adjacentNonTile: "G0",
-      },
-      F3: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["E3", "E4", "F2", "F4", "G1", "G2"],
-        adjacentNonTile: null,
-      },
-      F4: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["E4", "E5", "F3", "F5", "G2"],
-        adjacentNonTile: "G3",
-      },
-      F5: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["E5", "E6", "F4"],
-        adjacentNonTile: "G3",
-      },
-      G1: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["F2", "F3", "G2"],
-        adjacentNonTile: "G0",
-      },
-      G2: {
-        selectable: false,
-        selected: false,
-        occupantSelectable: true,
-        occupantSelected: false,
-        adjacent: ["F3", "F4", "G1"],
-        adjacentNonTile: "G3",
-      },
-    },
-    gods: {
-      D0: {
-        selectable: false,
-        player: "player2",
-        adjacent: ["C1", "D1", "E1"],
-      },
-      D6: {
-        selectable: false,
-        player: "player1",
-        adjacent: ["C6", "D5", "E6"],
-      },
-    },
-    data: {
-      status: {
-        finished: false,
-        winner: "",
-        turn: 1,
-        current: "player1",
-      },
-      board: {
-        wells: {
-          A0: {
-            available: true,
-            collected: false,
-            adjacent: ["A1", "B1", "B2"],
-          },
-          A3: {
-            available: true,
-            collected: false,
-            adjacent: ["A2", "B4", "B5"],
-          },
-          G0: {
-            available: true,
-            collected: false,
-            adjacent: ["G1", "F1", "F2"],
-          },
-          G3: {
-            available: true,
-            collected: false,
-            adjacent: ["G2", "F4", "F5"],
-          },
-        },
-        tiles: {
-          A1: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          A2: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "player2",
-              id: 3,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 1,
-              base_attack: 0,
-              health: 3,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: true },
-              effectUsed: false,
-            },
-          },
-          B1: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          B2: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          B3: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          B4: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          B5: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          C1: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          C2: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          C3: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          C4: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          C5: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          C6: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          D1: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          D2: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          D3: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          D4: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          D5: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          E1: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          E2: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          E3: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          E4: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          E5: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          E6: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          F1: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          F2: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          F3: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          F4: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          F5: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          G1: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-          G2: {
-            type: "none",
-            owner: "",
-            occupant: {
-              player: "",
-              id: 0,
-              type: "",
-              faeria_cost: 0,
-              land_cost: {
-                forest: 0,
-                desert: 0,
-                mountain: 0,
-                lake: 0,
-                wild: 0,
-              },
-              attack: 0,
-              base_attack: 0,
-              health: 0,
-              base_health: 0,
-              movement: {
-                range: 1,
-                haste: true,
-                dash: 0,
-                special: {
-                  aquatic: false,
-                  flying: false,
-                  jump: false,
-                },
-              },
-              taunt: false,
-              divine: false,
-              protection: false,
-              ranged: false,
-              hasMoved: false,
-              hasDashed: false,
-              hasAttacked: false,
-              effects: { summon: false, gift: false, lastword: false },
-              effectUsed: false,
-            },
-          },
-        },
-        gods: {
-          D0: {
-            health: 20,
-            wasHit: false,
-          },
-          D6: {
-            health: 20,
-            wasHit: false,
-          },
-        },
-      },
-      player1: {
-        name: "BabyBlue",
-        mulligan: true,
-        wheel_used: false,
-        wheel_neutral_counter: 0,
-        health_dmg: 0,
-        faeria: 3,
-        hand: [],
-        deck: [
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7,
-          8,
-          9,
-          10,
-          11,
-          12,
-          13,
-          14,
-          15,
-          16,
-          17,
-          18,
-          19,
-          20,
-          21,
-          22,
-          23,
-          24,
-          25,
-          26,
-          27,
-          28,
-          29,
-          30,
-        ],
-        cards: {
-          0: {
-            id: 0,
-            type: "event",
-            faeria_cost: 0,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
-            attack: 0,
-            base_attack: 0,
-            health: 0,
-            base_health: 0,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: false,
-                flying: false,
-                jump: false,
-              },
-            },
-            ranged: false,
-            effects: { target: true },
-          },
-          1: {
-            id: 1,
-            type: "creature",
-            faeria_cost: 4,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 2,
-            base_attack: 2,
-            health: 3,
-            base_health: 3,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: true,
-                flying: false,
-                jump: false,
-              },
-            },
-            ranged: false,
-            effects: { summon: false, gift: true, lastword: false },
-          },
-          2: {
-            id: 1,
-            type: "creature",
-            faeria_cost: 4,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 2,
-            base_attack: 2,
-            health: 3,
-            base_health: 3,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: true,
-                flying: false,
-                jump: false,
-              },
-            },
-            ranged: false,
-            effects: { summon: false, gift: true, lastword: false },
-          },
-          3: {
-            id: 1,
-            type: "creature",
-            faeria_cost: 4,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 2,
-            base_attack: 2,
-            health: 3,
-            base_health: 3,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: true,
-                flying: false,
-                jump: false,
-              },
-            },
-            ranged: false,
-            effects: { summon: false, gift: true, lastword: false },
-          },
-          4: {
-            id: 2,
-            type: "creature",
-            faeria_cost: 5,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
-            attack: 3,
-            base_attack: 3,
-            health: 6,
-            base_health: 6,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: false,
-                flying: false,
-                jump: true,
-              },
-            },
-            ranged: false,
-            effects: [],
-          },
-          5: {
-            id: 2,
-            type: "creature",
-            faeria_cost: 5,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
-            attack: 3,
-            base_attack: 3,
-            health: 6,
-            base_health: 6,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: false,
-                flying: false,
-                jump: true,
-              },
-            },
-            ranged: false,
-            effects: [],
-          },
-          6: {
-            id: 2,
-            type: "creature",
-            faeria_cost: 5,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
-            attack: 3,
-            base_attack: 3,
-            health: 6,
-            base_health: 6,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: false,
-                flying: false,
-                jump: true,
-              },
-            },
-            ranged: false,
-            effects: [],
-          },
-          7: {
-            id: 3,
-            type: "creature",
-            faeria_cost: 3,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 1,
-            base_attack: 1,
-            health: 3,
-            base_health: 3,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: false,
-                flying: false,
-                jump: false,
-              },
-            },
-            ranged: false,
-            effects: { summon: false, gift: false, lastword: true },
-          },
-          8: {
-            id: 3,
-            type: "creature",
-            faeria_cost: 3,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 1,
-            base_attack: 1,
-            health: 3,
-            base_health: 3,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: false,
-                flying: false,
-                jump: false,
-              },
-            },
-            ranged: false,
-            effects: { summon: false, gift: false, lastword: true },
-          },
-          9: {
-            id: 3,
-            type: "creature",
-            faeria_cost: 3,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 1,
-            base_attack: 1,
-            health: 3,
-            base_health: 3,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: false,
-                flying: false,
-                jump: false,
-              },
-            },
-            ranged: false,
-            effects: { summon: false, gift: false, lastword: true },
-          },
-          10: {
-            id: 4,
-            type: "creature",
-            faeria_cost: 4,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
-            attack: 3,
-            base_attack: 3,
-            health: 3,
-            base_health: 3,
-            movement: {
-              range: 1,
-              haste: true,
-              dash: 0,
-              special: {
-                aquatic: false,
-                flying: false,
-                jump: true,
-              },
-            },
-            taunt: false,
-            divine: false,
-            protection: false,
-            ranged: false,
-            effects: [],
-          },
-          11: {
-            id: 4,
-            type: "creature",
-            faeria_cost: 4,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
-            attack: 3,
-            base_attack: 3,
-            health: 3,
-            base_health: 3,
-            movement: {
-              range: 1,
-              haste: true,
-              dash: 0,
-              special: {
-                aquatic: false,
-                flying: false,
-                jump: true,
-              },
-            },
-            taunt: false,
-            divine: false,
-            protection: false,
-            ranged: false,
-            effects: [],
-          },
-          12: {
-            id: 4,
-            type: "creature",
-            faeria_cost: 4,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
-            attack: 3,
-            base_attack: 3,
-            health: 3,
-            base_health: 3,
-            movement: {
-              range: 1,
-              haste: true,
-              dash: 0,
-              special: {
-                aquatic: false,
-                flying: false,
-                jump: true,
-              },
-            },
-            taunt: false,
-            divine: false,
-            protection: false,
-            ranged: false,
-            effects: [],
-          },
-          13: {
-            id: 5,
-            type: "event",
-            faeria_cost: 3,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 0,
-            base_attack: 0,
-            health: 0,
-            base_health: 0,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: false,
-                flying: false,
-                jump: false,
-              },
-            },
-            ranged: false,
-            effects: { target: true },
-          },
-          14: {
-            id: 5,
-            type: "event",
-            faeria_cost: 3,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 0,
-            base_attack: 0,
-            health: 0,
-            base_health: 0,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: false,
-                flying: false,
-                jump: false,
-              },
-            },
-            ranged: false,
-            effects: { target: true },
-          },
-          15: {
-            id: 5,
-            type: "event",
-            faeria_cost: 3,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 0,
-            base_attack: 0,
-            health: 0,
-            base_health: 0,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: false,
-                flying: false,
-                jump: false,
-              },
-            },
-            ranged: false,
-            effects: { target: true },
-          },
-          16: {
-            id: 6,
-            type: "event",
-            faeria_cost: 3,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 0,
-            base_attack: 0,
-            health: 0,
-            base_health: 0,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: false,
-                flying: false,
-                jump: false,
-              },
-            },
-            ranged: false,
-            effects: { target: false },
-          },
-          17: {
-            id: 6,
-            type: "event",
-            faeria_cost: 3,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 0,
-            base_attack: 0,
-            health: 0,
-            base_health: 0,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: false,
-                flying: false,
-                jump: false,
-              },
-            },
-            ranged: false,
-            effects: { target: false },
-          },
-          18: {
-            id: 6,
-            type: "event",
-            faeria_cost: 3,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 0,
-            base_attack: 0,
-            health: 0,
-            base_health: 0,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: false,
-                flying: false,
-                jump: false,
-              },
-            },
-            ranged: false,
-            effects: { target: false },
-          },
-          19: {
-            id: 7,
-            type: "event",
-            faeria_cost: 3,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 0,
-            base_attack: 0,
-            health: 0,
-            base_health: 0,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: false,
-                flying: false,
-                jump: false,
-              },
-            },
-            ranged: false,
-            effects: { target: false },
-          },
-          20: {
-            id: 7,
-            type: "event",
-            faeria_cost: 3,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 0,
-            base_attack: 0,
-            health: 0,
-            base_health: 0,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: false,
-                flying: false,
-                jump: false,
-              },
-            },
-            ranged: false,
-            effects: { target: false },
-          },
-          21: {
-            id: 7,
-            type: "event",
-            faeria_cost: 3,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 2, wild: 0 },
-            attack: 0,
-            base_attack: 0,
-            health: 0,
-            base_health: 0,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: false,
-                flying: false,
-                jump: false,
-              },
-            },
-            ranged: false,
-            effects: { target: false },
-          },
-          22: {
-            id: 8,
-            type: "creature",
-            faeria_cost: 5,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
-            attack: 5,
-            base_attack: 5,
-            health: 5,
-            base_health: 5,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: false,
-                flying: false,
-                jump: true,
-              },
-            },
-            ranged: false,
-            effects: { summon: true, gift: false, lastword: false },
-          },
-          23: {
-            id: 8,
-            type: "creature",
-            faeria_cost: 5,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
-            attack: 5,
-            base_attack: 5,
-            health: 5,
-            base_health: 5,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: false,
-                flying: false,
-                jump: true,
-              },
-            },
-            ranged: false,
-            effects: { summon: true, gift: false, lastword: false },
-          },
-          24: {
-            id: 8,
-            type: "creature",
-            faeria_cost: 5,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 3, wild: 0 },
-            attack: 5,
-            base_attack: 5,
-            health: 5,
-            base_health: 5,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: false,
-                flying: false,
-                jump: true,
-              },
-            },
-            ranged: false,
-            effects: { summon: true, gift: false, lastword: false },
-          },
-          25: {
-            id: 9,
-            type: "event",
-            faeria_cost: 6,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 4, wild: 0 },
-            attack: 0,
-            base_attack: 0,
-            health: 0,
-            base_health: 0,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: false,
-                flying: false,
-                jump: false,
-              },
-            },
-            ranged: false,
-            effects: { target: false },
-          },
-          26: {
-            id: 9,
-            type: "event",
-            faeria_cost: 6,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 4, wild: 0 },
-            attack: 0,
-            base_attack: 0,
-            health: 0,
-            base_health: 0,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: false,
-                flying: false,
-                jump: false,
-              },
-            },
-            ranged: false,
-            effects: { target: false },
-          },
-          27: {
-            id: 9,
-            type: "event",
-            faeria_cost: 6,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 4, wild: 0 },
-            attack: 0,
-            base_attack: 0,
-            health: 0,
-            base_health: 0,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: false,
-                flying: false,
-                jump: false,
-              },
-            },
-            ranged: false,
-            effects: { target: false },
-          },
-          28: {
-            id: 10,
-            type: "creature",
-            faeria_cost: 1,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 1, wild: 0 },
-            attack: 1,
-            base_attack: 1,
-            health: 1,
-            base_health: 1,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: true,
-                flying: false,
-                jump: false,
-              },
-            },
-            ranged: false,
-            effects: [],
-          },
-          29: {
-            id: 10,
-            type: "creature",
-            faeria_cost: 1,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 1, wild: 0 },
-            attack: 1,
-            base_attack: 1,
-            health: 1,
-            base_health: 1,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: true,
-                flying: false,
-                jump: false,
-              },
-            },
-            ranged: false,
-            effects: [],
-          },
-          30: {
-            id: 11,
-            type: "event",
-            faeria_cost: 9,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 4, wild: 0 },
-            attack: 0,
-            base_attack: 0,
-            health: 0,
-            base_health: 0,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: true,
-                flying: false,
-                jump: false,
-              },
-            },
-            ranged: false,
-            effects: { target: false },
-          },
-        },
-      },
-      player2: {
-        name: "BabyBurrito",
-        mulligan: true,
-        wheel_used: false,
-        wheel_neutral_counter: 0,
-        health_dmg: 0,
-        faeria: 3,
-        hand: [],
-        deck: [
-          1,
-          2,
-          3,
-          4,
-          5,
-          6,
-          7,
-          8,
-          9,
-          10,
-          11,
-          12,
-          13,
-          14,
-          15,
-          16,
-          17,
-          18,
-          19,
-          20,
-          21,
-          22,
-          23,
-          24,
-          25,
-          26,
-          27,
-          28,
-          29,
-          30,
-        ],
-        cards: {
-          0: {
-            id: 0,
-            type: 0,
-            faeria_cost: 0,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          1: {
-            id: 1,
-            type: 0,
-            faeria_cost: 0,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          2: {
-            id: 1,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          3: {
-            id: 1,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          4: {
-            id: 2,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          5: {
-            id: 2,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          6: {
-            id: 2,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          7: {
-            id: 3,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          8: {
-            id: 3,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          9: {
-            id: 3,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          10: {
-            id: 4,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          11: {
-            id: 4,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          12: {
-            id: 4,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          13: {
-            id: 5,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          14: {
-            id: 5,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          15: {
-            id: 5,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          16: {
-            id: 6,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          17: {
-            id: 6,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          18: {
-            id: 6,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          19: {
-            id: 7,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          20: {
-            id: 7,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          21: {
-            id: 7,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          22: {
-            id: 8,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          23: {
-            id: 8,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          24: {
-            id: 8,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          25: {
-            id: 9,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          26: {
-            id: 9,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          27: {
-            id: 9,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          28: {
-            id: 10,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          29: {
-            id: 10,
-            type: 0,
-            faeria: 0,
-            attack: 0,
-            health: 0,
-            effects: [],
-          },
-          30: {
-            id: 10,
-            type: "creature",
-            faeria_cost: 1,
-            land_cost: { forest: 0, desert: 0, mountain: 0, lake: 1, wild: 0 },
-            attack: 1,
-            health: 1,
-            movement: {
-              range: 1,
-              special: {
-                aquatic: false,
-                flying: false,
-                jump: false,
-              },
-            },
-            ranged: false,
-            effects: [],
-          },
-        },
-      },
-    },
-  });
+  initStore(actions, loadStore);
 };
 
 export default configureStore;
