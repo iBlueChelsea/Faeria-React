@@ -17,7 +17,11 @@ const EndTurnButton = (props) => {
   const enemyTurnHandler = () => {};
 
   const btnText =
-    props.opponent === props.data.current ? "ENEMY TURN" : "END TURN";
+    props.data.turn === 0
+      ? "MULLIGAN"
+      : props.opponent === props.data.current
+      ? "ENEMY TURN"
+      : "END TURN";
   const btnClass =
     props.opponent === props.data.current
       ? "enemyturn-button"
@@ -25,7 +29,9 @@ const EndTurnButton = (props) => {
   const btnClassText =
     props.opponent === props.data.current ? "enemyturn-text" : "endturn-text";
   const btnOnClick =
-    props.opponent === props.data.current ? enemyTurnHandler : endTurnHandler;
+    props.data.turn === 0 || props.opponent === props.data.current
+      ? enemyTurnHandler
+      : endTurnHandler;
 
   return (
     <g onClick={btnOnClick}>

@@ -11,7 +11,6 @@ const configureStore = (loadStore) => {
     },
     SHUFFLE_DECK: (currentState, data) => {
       const updatedState = JSON.parse(JSON.stringify(currentState));
-      updatedState.currentAction = "mulligan";
       const shuffledDeck = [];
       for (let i = 0; i < currentState.data[data.player].deck.length; i++) {
         let random = Math.floor(
@@ -26,79 +25,76 @@ const configureStore = (loadStore) => {
       const getdata = new FormData();
       getdata.append("id", document.getElementById("game_id").value);
       axios
-        .post("http://localhost/faeria/Faeria/utils/getState.php", getdata)
+        .post(
+          "https://cheekia.loca.lt/faeria/Faeria/utils/getState.php",
+          getdata
+        )
         .then((res) => {
           const prevState = JSON.parse(res.data);
           newState.data[data.opponent] = prevState.data[data.opponent];
           const postdata = new FormData();
           postdata.append("react_state", JSON.stringify(newState));
           postdata.append("id", data.id);
-          axios.post(
-            "http://localhost/faeria/Faeria/utils/saveState.php",
-            postdata
-          );
+          axios
+            .post(
+              "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+              postdata
+            )
+            .catch((error) => {
+              console.log("Network Error", error.message);
+            });
+        })
+        .catch((error) => {
+          console.log("Network Error", error.message);
         });
       return updatedState;
     },
     CONFIRM_MULLIGAN: (currentState, data) => {
+      let updatedState = JSON.parse(JSON.stringify(currentState));
+      updatedState = data;
+      return updatedState;
+    },
+    START_GAME: (currentState, data) => {
       const updatedState = JSON.parse(JSON.stringify(currentState));
-      updatedState.currentAction = "";
-      const prevHand = updatedState.data[data.player].deck.slice(0, 3);
-      const cardsToReplace = [];
-      const newHand = [];
-      for (let i = 0; i < prevHand.length; i++) {
-        if (data.initialHand[i]) {
-          cardsToReplace.push(
-            updatedState.data[data.player].cards[prevHand[i]].id
-          );
-        } else {
-          newHand.push(parseInt(prevHand[i]));
-        }
-      }
-      const replacePool = Object.entries(
-        updatedState.data[data.player].cards
-      ).filter(
-        (card) =>
-          !cardsToReplace.includes(card[1].id) &&
-          !newHand.includes(parseInt(card[0])) &&
-          parseInt(card[0]) !== 0
-      );
-      for (let i = 0; i < cardsToReplace.length; i++) {
-        let random = Math.floor(Math.random() * replacePool.length);
-        newHand.push(parseInt(replacePool[random][0]));
-        replacePool.splice(random, 1);
-      }
-      const shuffledDeck = [];
-      const prevDeck = updatedState.data[data.player].deck.filter(
-        (card) => !newHand.includes(card)
-      );
-      const deckLength = prevDeck.length;
-      for (let i = 0; i < deckLength; i++) {
-        let random = Math.floor(Math.random() * prevDeck.length);
-        shuffledDeck.push(prevDeck[random]);
-        prevDeck.splice(random, 1);
-      }
-      if (data.player === "player2") {
-        newHand.push(0);
-      }
-      updatedState.data[data.player].deck = shuffledDeck;
-      updatedState.data[data.player].hand = newHand;
-      updatedState.data[data.player].mulligan = false;
-      const newState = JSON.parse(JSON.stringify(updatedState));
-      const getdata = new FormData();
-      getdata.append("id", document.getElementById("game_id").value);
+
+      updatedState.data.status.turn = 1;
+      updatedState.data[data.player].wheel_used = false;
+
+      //Wheel
+      Object.keys(updatedState.wheelbuttons).forEach((wheel) => {
+        updatedState.wheelbuttons[wheel].selectable = true;
+        updatedState.wheelbuttons[wheel].selected = false;
+      });
+
+      //Hand
+      Object.keys(updatedState.hand).forEach((card) => {
+        updatedState.hand[card].selectable = true;
+        updatedState.hand[card].selected = false;
+      });
+
+      //Tiles and Occupants
+      Object.keys(updatedState.tiles).forEach((tile) => {
+        updatedState.tiles[tile].selectable = false;
+        updatedState.tiles[tile].selected = false;
+        updatedState.tiles[tile].occupantSelectable = true;
+        updatedState.tiles[tile].occupantSelected = false;
+      });
+
+      //Gods
+      Object.keys(updatedState.gods).forEach((god) => {
+        updatedState.gods[god].selectable = false;
+      });
+
+      const formdata = new FormData();
+      formdata.append("react_state", JSON.stringify(updatedState));
+      formdata.append("id", document.getElementById("game_id").value);
       axios
-        .post("http://localhost/faeria/Faeria/utils/getState.php", getdata)
-        .then((res) => {
-          const prevState = JSON.parse(res.data);
-          newState.data[data.opponent] = prevState.data[data.opponent];
-          const postdata = new FormData();
-          postdata.append("react_state", JSON.stringify(newState));
-          postdata.append("id", data.id);
-          axios.post(
-            "http://localhost/faeria/Faeria/utils/saveState.php",
-            postdata
-          );
+        .post(
+          "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+          formdata
+        )
+        .catch((error) => {
+          console.log("Network Error", error.message);
         });
       return updatedState;
     },
@@ -197,10 +193,14 @@ const configureStore = (loadStore) => {
       const formdata = new FormData();
       formdata.append("react_state", JSON.stringify(updatedState));
       formdata.append("id", document.getElementById("game_id").value);
-      axios.post(
-        "http://localhost/faeria/Faeria/utils/saveState.php",
-        formdata
-      );
+      axios
+        .post(
+          "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+          formdata
+        )
+        .catch((error) => {
+          console.log("Network Error", error.message);
+        });
       return updatedState;
     },
     PLUS_FAERIA: (currentState, player) => {
@@ -210,10 +210,14 @@ const configureStore = (loadStore) => {
       const formdata = new FormData();
       formdata.append("react_state", JSON.stringify(updatedState));
       formdata.append("id", document.getElementById("game_id").value);
-      axios.post(
-        "http://localhost/faeria/Faeria/utils/saveState.php",
-        formdata
-      );
+      axios
+        .post(
+          "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+          formdata
+        )
+        .catch((error) => {
+          console.log("Network Error", error.message);
+        });
       return updatedState;
     },
     BUILD_TILE: (currentState, data) => {
@@ -250,10 +254,14 @@ const configureStore = (loadStore) => {
       const formdata = new FormData();
       formdata.append("react_state", JSON.stringify(updatedState));
       formdata.append("id", document.getElementById("game_id").value);
-      axios.post(
-        "http://localhost/faeria/Faeria/utils/saveState.php",
-        formdata
-      );
+      axios
+        .post(
+          "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+          formdata
+        )
+        .catch((error) => {
+          console.log("Network Error", error.message);
+        });
       return updatedState;
     },
     SELECT_CARD: (currentState, data) => {
@@ -331,7 +339,9 @@ const configureStore = (loadStore) => {
           if (
             !updatedState.tiles[tile].adjacent.some(
               canSpawnAdjacentToFriendlies
-            )
+            ) &&
+            (!landtypes.includes(updatedState.data.board.tiles[tile].type) ||
+              updatedState.data.board.tiles[tile].owner !== data.player)
           ) {
             return false;
           }
@@ -369,6 +379,7 @@ const configureStore = (loadStore) => {
         if (updatedState.data.board.tiles[tile].occupant.player) {
           return false;
         }
+        let valid = true;
         Object.keys(
           updatedState.data[data.player].cards[data.card_id].land_cost
         ).forEach((key) => {
@@ -378,7 +389,7 @@ const configureStore = (loadStore) => {
                 key
               ] > lands[key]
             ) {
-              return false;
+              valid = false;
             }
           } else {
             if (
@@ -389,11 +400,11 @@ const configureStore = (loadStore) => {
                 (sum, currentValue) => sum + currentValue
               )
             ) {
-              return false;
+              valid = false;
             }
           }
         });
-        return true;
+        return valid;
       };
       if (newHand[data.hand_id].selected) {
         updatedState.currentAction = "summon_creature";
@@ -453,6 +464,17 @@ const configureStore = (loadStore) => {
             data.hand_id
           ].selected;
           updatedState = EP.handleEventLogic();
+          const formdata = new FormData();
+          formdata.append("react_state", JSON.stringify(updatedState));
+          formdata.append("id", document.getElementById("game_id").value);
+          axios
+            .post(
+              "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+              formdata
+            )
+            .catch((error) => {
+              console.log("Network Error", error.message);
+            });
         }
       }
       return updatedState;
@@ -464,10 +486,14 @@ const configureStore = (loadStore) => {
       const formdata = new FormData();
       formdata.append("react_state", JSON.stringify(updatedState));
       formdata.append("id", document.getElementById("game_id").value);
-      axios.post(
-        "http://localhost/faeria/Faeria/utils/saveState.php",
-        formdata
-      );
+      axios
+        .post(
+          "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+          formdata
+        )
+        .catch((error) => {
+          console.log("Network Error", error.message);
+        });
       return updatedState;
     },
     PROCESS_EVENT_TILE: (currentState, data) => {
@@ -477,10 +503,14 @@ const configureStore = (loadStore) => {
       const formdata = new FormData();
       formdata.append("react_state", JSON.stringify(updatedState));
       formdata.append("id", document.getElementById("game_id").value);
-      axios.post(
-        "http://localhost/faeria/Faeria/utils/saveState.php",
-        formdata
-      );
+      axios
+        .post(
+          "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+          formdata
+        )
+        .catch((error) => {
+          console.log("Network Error", error.message);
+        });
       return updatedState;
     },
     PROCESS_GIFT_OCCUPANT: (currentState, data) => {
@@ -493,10 +523,14 @@ const configureStore = (loadStore) => {
       const formdata = new FormData();
       formdata.append("react_state", JSON.stringify(updatedState));
       formdata.append("id", document.getElementById("game_id").value);
-      axios.post(
-        "http://localhost/faeria/Faeria/utils/saveState.php",
-        formdata
-      );
+      axios
+        .post(
+          "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+          formdata
+        )
+        .catch((error) => {
+          console.log("Network Error", error.message);
+        });
       return updatedState;
     },
     SUMMON_CREATURE: (currentState, data) => {
@@ -587,10 +621,14 @@ const configureStore = (loadStore) => {
       const formdata = new FormData();
       formdata.append("react_state", JSON.stringify(updatedState));
       formdata.append("id", document.getElementById("game_id").value);
-      axios.post(
-        "http://localhost/faeria/Faeria/utils/saveState.php",
-        formdata
-      );
+      axios
+        .post(
+          "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+          formdata
+        )
+        .catch((error) => {
+          console.log("Network Error", error.message);
+        });
       return updatedState;
     },
     SELECT_OCCUPANT: (currentState, data) => {
@@ -1109,10 +1147,14 @@ const configureStore = (loadStore) => {
       const formdata = new FormData();
       formdata.append("react_state", JSON.stringify(updatedState));
       formdata.append("id", document.getElementById("game_id").value);
-      axios.post(
-        "http://localhost/faeria/Faeria/utils/saveState.php",
-        formdata
-      );
+      axios
+        .post(
+          "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+          formdata
+        )
+        .catch((error) => {
+          console.log("Network Error", error.message);
+        });
       return updatedState;
     },
     ATTACK_OCCUPANT: (currentState, data) => {
@@ -1202,10 +1244,14 @@ const configureStore = (loadStore) => {
       const formdata = new FormData();
       formdata.append("react_state", JSON.stringify(updatedState));
       formdata.append("id", document.getElementById("game_id").value);
-      axios.post(
-        "http://localhost/faeria/Faeria/utils/saveState.php",
-        formdata
-      );
+      axios
+        .post(
+          "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+          formdata
+        )
+        .catch((error) => {
+          console.log("Network Error", error.message);
+        });
       return updatedState;
     },
     ATTACK_GOD: (currentState, data) => {
@@ -1243,10 +1289,14 @@ const configureStore = (loadStore) => {
       const formdata = new FormData();
       formdata.append("react_state", JSON.stringify(updatedState));
       formdata.append("id", document.getElementById("game_id").value);
-      axios.post(
-        "http://localhost/faeria/Faeria/utils/saveState.php",
-        formdata
-      );
+      axios
+        .post(
+          "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+          formdata
+        )
+        .catch((error) => {
+          console.log("Network Error", error.message);
+        });
       return updatedState;
     },
     END_TURN: (currentState, data) => {
@@ -1257,18 +1307,20 @@ const configureStore = (loadStore) => {
         player1: "D6",
         player2: "D0",
       };
-      if (updatedState.data[data.opponent].deck.length > 0) {
-        if (updatedState.data[data.opponent].hand.length < 9) {
-          updatedState.data[data.opponent].hand.push(
-            updatedState.data[data.opponent].deck.splice(0, 1)[0]
-          );
+      if (updatedState.data.status.turn > 1) {
+        if (updatedState.data[data.opponent].deck.length > 0) {
+          if (updatedState.data[data.opponent].hand.length < 9) {
+            updatedState.data[data.opponent].hand.push(
+              updatedState.data[data.opponent].deck.splice(0, 1)[0]
+            );
+          } else {
+            updatedState.data[data.opponent].deck.splice(0, 1);
+          }
         } else {
-          updatedState.data[data.opponent].deck.splice(0, 1);
+          updatedState.data.board.gods[
+            god[data.opponent]
+          ].health -= ++updatedState.data[data.opponent].health_dmg;
         }
-      } else {
-        updatedState.data.board.gods[
-          god[data.opponent]
-        ].health -= ++updatedState.data[data.opponent].health_dmg;
       }
       const removeOccupant = {
         player: "",
@@ -1375,10 +1427,14 @@ const configureStore = (loadStore) => {
       const formdata = new FormData();
       formdata.append("react_state", JSON.stringify(updatedState));
       formdata.append("id", document.getElementById("game_id").value);
-      axios.post(
-        "http://localhost/faeria/Faeria/utils/saveState.php",
-        formdata
-      );
+      axios
+        .post(
+          "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+          formdata
+        )
+        .catch((error) => {
+          console.log("Network Error", error.message);
+        });
 
       return updatedState;
     },

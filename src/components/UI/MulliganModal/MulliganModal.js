@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import "./MulliganModal.css";
 import Card from "../../Game/Hand/Card/Card";
 import { useStore } from "../../../hooks-store/store";
+import axios from "axios";
 
 const MulliganModal = (props) => {
   const [state, dispatch] = useStore();
@@ -10,6 +11,7 @@ const MulliganModal = (props) => {
     1: false,
     2: false,
   });
+  const [btnDisabled, setBtnDisabled] = useState(false);
 
   const swapHandler = (event) => {
     const newHand = JSON.parse(JSON.stringify(initialHand));
@@ -40,13 +42,77 @@ const MulliganModal = (props) => {
   });
 
   const confirmHandler = () => {
-    const payload = {
-      player: props.user,
-      opponent: props.opponent,
-      initialHand: initialHand,
-      id: props.id,
-    };
-    dispatch("CONFIRM_MULLIGAN", payload);
+    if (btnDisabled) {
+      return;
+    }
+    setBtnDisabled(true);
+    const newState = JSON.parse(JSON.stringify(state));
+    const getdata = new FormData();
+    getdata.append("id", props.id);
+    axios
+      .post("https://cheekia.loca.lt/faeria/Faeria/utils/getState.php", getdata)
+      .then((res) => {
+        const prevState = JSON.parse(res.data);
+        newState.data[props.opponent] = prevState.data[props.opponent];
+        const prevHand = newState.data[props.user].deck.slice(0, 3);
+        const cardsToReplace = [];
+        const newHand = [];
+        for (let i = 0; i < prevHand.length; i++) {
+          if (initialHand[i]) {
+            cardsToReplace.push(
+              newState.data[props.user].cards[prevHand[i]].id
+            );
+          } else {
+            newHand.push(parseInt(prevHand[i]));
+          }
+        }
+        const replacePool = Object.entries(
+          newState.data[props.user].cards
+        ).filter(
+          (card) =>
+            !cardsToReplace.includes(card[1].id) &&
+            !newHand.includes(parseInt(card[0])) &&
+            parseInt(card[0]) !== 0
+        );
+        for (let i = 0; i < cardsToReplace.length; i++) {
+          let random = Math.floor(Math.random() * replacePool.length);
+          newHand.push(parseInt(replacePool[random][0]));
+          replacePool.splice(random, 1);
+        }
+        const shuffledDeck = [];
+        const prevDeck = newState.data[props.user].deck.filter(
+          (card) => !newHand.includes(card)
+        );
+        const deckLength = prevDeck.length;
+        for (let i = 0; i < deckLength; i++) {
+          let random = Math.floor(Math.random() * prevDeck.length);
+          shuffledDeck.push(prevDeck[random]);
+          prevDeck.splice(random, 1);
+        }
+        if (props.user === "player2") {
+          newHand.push(0);
+        }
+        newState.data[props.user].deck = shuffledDeck;
+        newState.data[props.user].hand = newHand;
+        newState.data[props.user].mulligan = false;
+        const postdata = new FormData();
+        postdata.append("react_state", JSON.stringify(newState));
+        postdata.append("id", props.id);
+        axios
+          .post(
+            "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+            postdata
+          )
+          .then(() => {
+            dispatch("CONFIRM_MULLIGAN", newState);
+          })
+          .catch((error) => {
+            console.log("Network Error", error.message);
+          });
+      })
+      .catch((error) => {
+        console.log("Network Error", error.message);
+      });
   };
 
   return (

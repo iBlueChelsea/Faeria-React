@@ -13,16 +13,21 @@ const Game = () => {
   const opponent = document.getElementById("opponent").value;
   const id = document.getElementById("game_id").value;
 
-  console.log("GET_DATA:");
-  console.log(state);
-
   useEffect(() => {
+    const payload = { player: user, opponent: opponent, id: id };
     if (!state.data[user].shuffle) {
-      const payload = { player: user, opponent: opponent, id: id };
       dispatch("SHUFFLE_DECK", payload);
     }
     if (
-      (state.data.status.current === opponent && !state.data[user].mulligan) ||
+      !state.data[user].mulligan &&
+      !state.data[opponent].mulligan &&
+      state.data.status.turn === 0 &&
+      user === "player1"
+    ) {
+      dispatch("START_GAME", payload);
+    }
+    if (
+      (state.data.status.current === opponent && !state.data[user].mulligan ) ||
       (!state.data[user].mulligan && state.data[opponent].mulligan)
     ) {
       const timer = setTimeout(() => {
@@ -31,14 +36,17 @@ const Game = () => {
         let timestamp = Date.now();
         axios
           .post(
-            "http://localhost/faeria/Faeria/utils/getState.php?timestamp=" +
+            "https://cheekia.loca.lt/faeria/Faeria/utils/getState.php?timestamp=" +
               timestamp,
             formdata
           )
           .then((res) => {
             dispatch("SET_DATA", JSON.parse(res.data));
+          })
+          .catch((error) => {
+            console.log("Network Error", error.message);
           });
-      }, 500);
+      }, 1000);
       return () => clearTimeout(timer);
     }
   });

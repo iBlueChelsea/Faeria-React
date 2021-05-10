@@ -1,5 +1,5 @@
-# 2020-10-26
+# 2021-05-09
 ## v0.1
-- Base project created
+- Faeria Alpha Release (First gameplay test)
 
 

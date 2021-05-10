@@ -9,7 +9,7 @@ let loadStore = {};
 const formdata = new FormData();
 formdata.append("id", document.getElementById("game_id").value);
 axios
-  .post("http://localhost/faeria/Faeria/utils/getState.php", formdata)
+  .post("https://cheekia.loca.lt/faeria/Faeria/utils/getState.php", formdata)
   .then((res) => {
     loadStore = JSON.parse(res.data);
     configureStore(loadStore);
@@ -19,4 +19,7 @@ axios
       </React.StrictMode>,
       document.getElementById("game")
     );
+  })
+  .catch((error) => {
+    console.log("Network Error", error.message);
   });
