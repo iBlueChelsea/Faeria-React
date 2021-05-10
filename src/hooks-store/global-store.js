@@ -1302,12 +1302,12 @@ const configureStore = (loadStore) => {
     END_TURN: (currentState, data) => {
       const updatedState = JSON.parse(JSON.stringify(currentState));
       updatedState.data[data.opponent].wheel_used = false;
-      updatedState.data[data.opponent].faeria += 3;
       const god = {
         player1: "D6",
         player2: "D0",
       };
       if (updatedState.data.status.turn > 1) {
+        updatedState.data[data.opponent].faeria += 3;
         if (updatedState.data[data.opponent].deck.length > 0) {
           if (updatedState.data[data.opponent].hand.length < 9) {
             updatedState.data[data.opponent].hand.push(
