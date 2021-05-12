@@ -10,8 +10,17 @@ const God = (props) => {
 
   const godHandler = () => {
     if (state.gods[props.id].selectable) {
-      const payload = { god: props.id, player: props.user };
-      dispatch("ATTACK_GOD", payload);
+      const payload = {
+        event: "god",
+        god: props.id,
+        player: props.user,
+        opponent: props.opponent,
+      };
+      if (state.currentAction === "event_occupant") {
+        dispatch("PROCESS_EVENT_OCCUPANT", payload);
+      } else {
+        dispatch("ATTACK_GOD", payload);
+      }
     }
   };
 

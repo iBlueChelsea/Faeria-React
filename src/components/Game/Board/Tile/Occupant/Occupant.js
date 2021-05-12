@@ -123,6 +123,7 @@ const Occupant = (props) => {
       state.data.status.current === props.user
     ) {
       const payload = {
+        event: "occupant",
         player: props.user,
         opponent: props.opponent,
         tile_id: props.tile,

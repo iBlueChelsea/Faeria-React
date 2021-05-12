@@ -106,6 +106,7 @@ const Board = (props) => {
                 Math.sqrt(3) * hexSize * 0.5
           }
           user={props.user}
+          opponent={props.opponent}
         />
       );
     });

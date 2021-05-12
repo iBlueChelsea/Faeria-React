@@ -9,17 +9,28 @@ export default class EventProcessor {
       7: "processEvent_7",
       9: "processEvent_9",
       11: "processEvent_11",
+      17: "processEvent_17",
+      23: "processEvent_23",
     };
     this.summonEffectLibrary = {
       8: "processSummonEffect_8",
+      14: "processSummonEffect_14",
     };
     this.giftEffectLibrary = {
       1: "processGiftEffect_1",
+      16: "processGiftEffect_16",
+      22: "processGiftEffect_22",
     };
     this.lastwordEffectLibrary = {
       3: "processLastwordEffect_3",
+      24: "processLastwordEffect_24",
+    };
+    this.productionEffectLibrary = {
+      19: "processProductionEffect_19",
+      20: "processProductionEffect_20",
     };
   }
+
   initEventLogic() {
     const newHand = this.state.hand;
     newHand[this.data.hand_id].selected = !newHand[this.data.hand_id].selected;
@@ -59,6 +70,7 @@ export default class EventProcessor {
     }
     return this.state;
   }
+
   handleEventLogic() {
     const selected_card_id = this.getSelectedCard();
     this[
@@ -82,22 +94,24 @@ export default class EventProcessor {
       this.state.wheelbuttons["wheel-B2"].selectable = true;
     }
     this.state.currentAction = "";
-    this.state.data[this.data.player].faeria -= this.state.data[
-      this.data.player
-    ].cards[
-      this.state.data[this.data.player].hand[selected_card_id - 1]
-    ].faeria_cost;
+    this.state.data[this.data.player].faeria -=
+      this.state.data[this.data.player].cards[
+        this.state.data[this.data.player].hand[selected_card_id - 1]
+      ].faeria_cost;
     this.state.data[this.data.player].hand.splice(selected_card_id - 1, 1);
     return this.state;
   }
+
   processSummonEffect(occupant) {
     this[this.summonEffectLibrary[occupant.id]]();
     return this.state;
   }
+
   initGiftEffect(occupant) {
     this[this.giftEffectLibrary[occupant.id]]("init", occupant);
     return this.state;
   }
+
   processGiftEffect(selected_occupant_id) {
     const occupant = this.state.data.board.tiles[selected_occupant_id].occupant;
     this[this.giftEffectLibrary[occupant.id]]("handle", selected_occupant_id);
@@ -115,8 +129,14 @@ export default class EventProcessor {
     }
     return this.state;
   }
+
   processLastwordEffect(occupant, tile) {
     this[this.lastwordEffectLibrary[occupant.id]](occupant, tile);
+    return this.state;
+  }
+
+  processProductionEffect(occupant, tile) {
+    this[this.productionEffectLibrary[occupant.id]](tile);
     return this.state;
   }
 
@@ -166,6 +186,7 @@ export default class EventProcessor {
       }
     });
   }
+
   getSelectedCard() {
     return parseInt(
       Object.keys(this.state.hand).filter(
@@ -173,6 +194,7 @@ export default class EventProcessor {
       )[0]
     );
   }
+
   getRemoveOccupant() {
     return {
       player: "",
@@ -207,10 +229,16 @@ export default class EventProcessor {
       hasMoved: false,
       hasDashed: false,
       hasAttacked: false,
-      effects: { summon: false, gift: false, lastword: false },
+      effects: {
+        summon: false,
+        gift: false,
+        lastword: false,
+        production: false,
+      },
       effectUsed: false,
     };
   }
+
   setSelectStateForBuildTiles(landtype) {
     const newTileState = this.state.tiles;
     const anyAdjacent = (tile) =>
@@ -249,6 +277,12 @@ export default class EventProcessor {
   setSelectStateForAllTiles(selectable) {
     Object.keys(this.state.tiles).forEach((key) => {
       this.state.tiles[key].selectable = selectable;
+    });
+  }
+
+  setSelectStateForGods(selectable) {
+    Object.keys(this.state.gods).forEach((key) => {
+      this.state.gods[key].selectable = selectable;
     });
   }
 
@@ -319,7 +353,12 @@ export default class EventProcessor {
           hasMoved: true,
           hasDashed: false,
           hasAttacked: true,
-          effects: { summon: false, gift: false, lastword: false },
+          effects: {
+            summon: false,
+            gift: false,
+            lastword: false,
+            production: false,
+          },
           effectUsed: false,
         };
       case 12:
@@ -350,7 +389,12 @@ export default class EventProcessor {
           hasMoved: true,
           hasDashed: false,
           hasAttacked: true,
-          effects: { summon: false, gift: false, lastword: false },
+          effects: {
+            summon: false,
+            gift: false,
+            lastword: false,
+            production: false,
+          },
           effectUsed: false,
         };
       case 13:
@@ -381,7 +425,48 @@ export default class EventProcessor {
           hasMoved: params.hasMoved,
           hasDashed: false,
           hasAttacked: params.hasAttacked,
-          effects: { summon: false, gift: false, lastword: false },
+          effects: {
+            summon: false,
+            gift: false,
+            lastword: false,
+            production: false,
+          },
+          effectUsed: false,
+        };
+      case 21:
+        return {
+          player: params.player,
+          id: 21,
+          type: "creature",
+          faeria_cost: 2,
+          land_cost: { forest: 0, desert: 0, mountain: 2, lake: 0, wild: 0 },
+          attack: 2,
+          base_attack: 2,
+          health: 1,
+          base_health: 1,
+          movement: {
+            range: 1,
+            haste: false,
+            dash: 0,
+            special: {
+              aquatic: false,
+              flying: true,
+              jump: false,
+            },
+          },
+          taunt: false,
+          divine: false,
+          protection: false,
+          ranged: false,
+          hasMoved: true,
+          hasDashed: false,
+          hasAttacked: true,
+          effects: {
+            summon: false,
+            gift: false,
+            lastword: false,
+            production: false,
+          },
           effectUsed: false,
         };
       default:
@@ -473,9 +558,8 @@ export default class EventProcessor {
       let count = 0;
       while (tileAvailable) {
         if (availableTiles.length !== 0) {
-          this.state.data.board.tiles[
-            availableTiles.splice(0, 1)
-          ].occupant = this.getOccupantByID(10);
+          this.state.data.board.tiles[availableTiles.splice(0, 1)].occupant =
+            this.getOccupantByID(10);
           if (++count === 6) {
             tileAvailable = false;
           }
@@ -499,11 +583,69 @@ export default class EventProcessor {
           this.state.data.board.tiles[tile].occupant = this.getOccupantByID(
             13,
             {
-              hasAttacked: this.state.data.board.tiles[tile].occupant
-                .hasAttacked,
+              hasAttacked:
+                this.state.data.board.tiles[tile].occupant.hasAttacked,
               hasMoved: this.state.data.board.tiles[tile].occupant.hasMoved,
             }
           );
+        });
+    }
+  }
+
+  //17 - Cheekblast
+  processEvent_17(process) {
+    if (process === "revert") {
+      this.setSelectStateForOccupants(true, false);
+      this.setSelectStateForGods(false);
+      this.state.currentAction = "";
+    }
+    if (process === "init") {
+      this.setSelectStateForOccupants(true, true);
+      this.setSelectStateForGods(true);
+      this.state.currentAction = "event_occupant";
+    }
+    if (process === "handle") {
+      this.setSelectStateForOccupants(true, false);
+      this.setSelectStateForGods(false);
+      if (this.data.event === "occupant") {
+        const target = this.state.data.board.tiles[this.data.tile_id].occupant;
+        target.health -= 3;
+        this.state.data.board.tiles[this.data.tile_id].occupant =
+          target.health > 0 ? target : this.getRemoveOccupant();
+        if (target.health <= 0 && target.effects.lastword) {
+          this.processLastwordEffect(target, this.data.tile_id);
+        }
+      }
+      if (this.data.event === "god") {
+        this.state.data.board.gods[this.data.god].health -= 3;
+        if (this.state.data.board.gods[this.data.god].health <= 0) {
+          this.state.data.status.finished = true;
+          this.state.data.status.winner =
+            this.state.gods[this.data.god].player === this.data.opponent
+              ? this.data.player
+              : this.data.opponent;
+        }
+      }
+    }
+  }
+
+  //23 - Cheekruption
+  processEvent_23(process) {
+    if (process === "handle") {
+      Object.keys(this.state.data.board.tiles)
+        .filter(
+          (key) =>
+            this.state.data.board.tiles[key].occupant.player ===
+            this.data.opponent
+        )
+        .forEach((tile) => {
+          const target = this.state.data.board.tiles[tile].occupant;
+          target.health -= 2;
+          this.state.data.board.tiles[tile].occupant =
+            target.health > 0 ? target : this.getRemoveOccupant();
+          if (target.health <= 0 && target.effects.lastword) {
+            this.processLastwordEffect(target, tile);
+          }
         });
     }
   }
@@ -523,12 +665,50 @@ export default class EventProcessor {
     }
   }
 
+  //14 - Cheekcano
+  processSummonEffect_14() {
+    Object.keys(this.state.data.board.tiles)
+      .filter(
+        (key) =>
+          this.state.data.board.tiles[key].occupant.player ===
+          this.data.opponent
+      )
+      .forEach((tile) => {
+        const target = this.state.data.board.tiles[tile].occupant;
+        target.health -= 1;
+        this.state.data.board.tiles[tile].occupant =
+          target.health > 0 ? target : this.getRemoveOccupant();
+        if (target.health <= 0 && target.effects.lastword) {
+          this.processLastwordEffect(target, tile);
+        }
+      });
+  }
+
   //Creatures - Lastword Effects
 
   //3 - Clamcheek
   processLastwordEffect_3(occupant, tile) {
     this.state.data.board.tiles[tile].occupant = this.getOccupantByID(12, {
       player: occupant.player,
+    });
+  }
+
+  //24 - Suncheek
+  processLastwordEffect_24(occupant, tile) {
+    this.state.tiles[tile].adjacent.forEach((adjTile) => {
+      if (
+        this.state.data.board.tiles[adjTile].occupant.player !==
+          occupant.player &&
+        this.state.data.board.tiles[adjTile].occupant.player
+      ) {
+        const target = this.state.data.board.tiles[adjTile].occupant;
+        target.health -= 5;
+        this.state.data.board.tiles[adjTile].occupant =
+          target.health > 0 ? target : this.getRemoveOccupant();
+        if (target.health <= 0 && target.effects.lastword) {
+          this.processLastwordEffect(target, adjTile);
+        }
+      }
     });
   }
 
@@ -545,15 +725,78 @@ export default class EventProcessor {
     }
     if (process === "handle") {
       if (this.data.tile_id !== selected_occupant_id) {
-        this.state.data.board.tiles[
-          this.data.tile_id
-        ].occupant.player = this.data.player;
+        this.state.data.board.tiles[this.data.tile_id].occupant.player =
+          this.data.player;
         this.state.data.board.tiles[this.data.tile_id].occupant.hasMoved = true;
         this.state.data.board.tiles[
           this.data.tile_id
         ].occupant.hasAttacked = true;
       }
       this.setSelectStateForOccupants(true, false);
+    }
+  }
+
+  //16 - Cheekflame
+  processGiftEffect_16(process, selected_occupant_id) {
+    if (process === "init") {
+      this.setSelectStateForOccupants(false, true);
+      this.setSelectStateForAllTiles(false);
+      this.state.tiles[this.data.tile_id].occupantSelected = true;
+      this.state.tiles[this.data.tile_id].occupantSelectable = true;
+      this.state.currentAction = "gift_occupant";
+    }
+    if (process === "handle") {
+      if (this.data.tile_id !== selected_occupant_id) {
+        const target = this.state.data.board.tiles[this.data.tile_id].occupant;
+        target.health -= 1;
+        this.state.data.board.tiles[this.data.tile_id].occupant =
+          target.health > 0 ? target : this.getRemoveOccupant();
+        if (target.health <= 0 && target.effects.lastword) {
+          this.processLastwordEffect(target, this.data.tile_id);
+        }
+      }
+      this.setSelectStateForOccupants(true, false);
+    }
+  }
+
+  //22 - Ghostcheek Alchemist
+  processGiftEffect_22(process, selected_occupant_id) {
+    if (process === "init") {
+      this.setSelectStateForOccupants(false, true);
+      this.setSelectStateForAllTiles(false);
+      this.state.tiles[this.data.tile_id].occupantSelected = true;
+      this.state.tiles[this.data.tile_id].occupantSelectable = true;
+      this.state.currentAction = "gift_occupant";
+    }
+    if (process === "handle") {
+      if (this.data.tile_id !== selected_occupant_id) {
+        this.state.data.board.tiles[this.data.tile_id].occupant =
+          this.getOccupantByID(21, {
+            player: this.data.opponent,
+          });
+      }
+      this.setSelectStateForOccupants(true, false);
+    }
+  }
+
+  //Creatures - Production Effects
+
+  //19 - Baby Cheekdevil
+  processProductionEffect_19(tile) {
+    this.state.data.board.tiles[tile].occupant.attack += 1;
+    this.state.data.board.tiles[tile].occupant.health += 1;
+  }
+
+  //20 - Ghostcheek Tower
+  processProductionEffect_20(tile) {
+    const availableTiles = this.getRandomTiles().filter(
+      (tile) => !this.state.data.board.tiles[tile].occupant.player
+    );
+    if (availableTiles.length !== 0) {
+      this.state.data.board.tiles[availableTiles.splice(0, 1)].occupant =
+        this.getOccupantByID(21, {
+          player: this.state.data.board.tiles[tile].occupant.player,
+        });
     }
   }
 }

@@ -101,9 +101,8 @@ const configureStore = (loadStore) => {
     SELECT_LAND: (currentState, data) => {
       const updatedState = JSON.parse(JSON.stringify(currentState));
       const newWheelState = updatedState.wheelbuttons;
-      newWheelState[data.wheelbutton_id].selected = !newWheelState[
-        data.wheelbutton_id
-      ].selected;
+      newWheelState[data.wheelbutton_id].selected =
+        !newWheelState[data.wheelbutton_id].selected;
       if (updatedState.data[data.player].wheel_neutral_counter !== 1) {
         Object.keys(newWheelState).forEach((key) => {
           if (key !== data.wheelbutton_id) {
@@ -460,9 +459,8 @@ const configureStore = (loadStore) => {
         if (updatedState.data[data.player].cards[data.card_id].effects.target) {
           updatedState = EP.initEventLogic();
         } else {
-          updatedState.hand[data.hand_id].selected = !updatedState.hand[
-            data.hand_id
-          ].selected;
+          updatedState.hand[data.hand_id].selected =
+            !updatedState.hand[data.hand_id].selected;
           updatedState = EP.handleEventLogic();
           const formdata = new FormData();
           formdata.append("react_state", JSON.stringify(updatedState));
@@ -633,16 +631,14 @@ const configureStore = (loadStore) => {
     },
     SELECT_OCCUPANT: (currentState, data) => {
       const updatedState = JSON.parse(JSON.stringify(currentState));
-      updatedState.tiles[data.tile_id].occupantSelected = !updatedState.tiles[
-        data.tile_id
-      ].occupantSelected;
+      updatedState.tiles[data.tile_id].occupantSelected =
+        !updatedState.tiles[data.tile_id].occupantSelected;
       const anyTaunt = (taunt_tile) =>
         updatedState.data.board.tiles[taunt_tile].occupant.taunt &&
         updatedState.data.board.tiles[taunt_tile].occupant.player ===
           data.opponent;
-      const isTaunted = updatedState.tiles[data.tile_id].adjacent.some(
-        anyTaunt
-      );
+      const isTaunted =
+        updatedState.tiles[data.tile_id].adjacent.some(anyTaunt);
       const jumpTiles = [];
       if (
         updatedState.data.board.tiles[data.tile_id].occupant.movement.special
@@ -1079,7 +1075,12 @@ const configureStore = (loadStore) => {
         hasMoved: false,
         hasDashed: false,
         hasAttacked: false,
-        effects: { summon: false, gift: false, lastword: false },
+        effects: {
+          summon: false,
+          gift: false,
+          lastword: false,
+          production: false,
+        },
         effectUsed: false,
       };
       updatedState.data.board.tiles[selected_tile_id].occupant = removeOccupant;
@@ -1198,7 +1199,12 @@ const configureStore = (loadStore) => {
         hasMoved: false,
         hasDashed: false,
         hasAttacked: false,
-        effects: { summon: false, gift: false, lastword: false },
+        effects: {
+          summon: false,
+          gift: false,
+          lastword: false,
+          production: false,
+        },
         effectUsed: false,
       };
       if (
@@ -1317,9 +1323,12 @@ const configureStore = (loadStore) => {
             updatedState.data[data.opponent].deck.splice(0, 1);
           }
         } else {
-          updatedState.data.board.gods[
-            god[data.opponent]
-          ].health -= ++updatedState.data[data.opponent].health_dmg;
+          updatedState.data.board.gods[god[data.opponent]].health -=
+            ++updatedState.data[data.opponent].health_dmg;
+          if (updatedState.data.board.gods[god[data.opponent]].health <= 0) {
+            updatedState.data.status.finished = true;
+            updatedState.data.status.winner = data.player;
+          }
         }
       }
       const removeOccupant = {
@@ -1355,7 +1364,12 @@ const configureStore = (loadStore) => {
         hasMoved: false,
         hasDashed: false,
         hasAttacked: false,
-        effects: { summon: false, gift: false, lastword: false },
+        effects: {
+          summon: false,
+          gift: false,
+          lastword: false,
+          production: false,
+        },
         effectUsed: false,
       };
       Object.keys(updatedState.data.board.tiles).forEach((key) => {
@@ -1394,6 +1408,20 @@ const configureStore = (loadStore) => {
           updatedState.data.board.wells[key].collected = false;
         }
       });
+
+      Object.keys(updatedState.data.board.tiles).forEach((key) => {
+        if (
+          updatedState.data.board.tiles[key].occupant.effects.production &&
+          updatedState.data.board.tiles[key].occupant.player === data.opponent
+        ) {
+          const EP = new EventProcessor(updatedState, data);
+          EP.processProductionEffect(
+            updatedState.data.board.tiles[key].occupant,
+            key
+          );
+        }
+      });
+
       updatedState.data.status.turn += 1;
       updatedState.data.status.current = data.opponent;
 
