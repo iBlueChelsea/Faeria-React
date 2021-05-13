@@ -3,7 +3,14 @@
     border-style: groove;
     border-width: 3px;
     width: 120px;
+    transition: transform .2s;
     cursor: pointer;
+    position: relative;
+}
+
+.card:hover {
+    transform: scale(2);
+    bottom: 50%;
 }
 
 .card-selected {

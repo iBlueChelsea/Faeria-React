@@ -228,6 +228,18 @@ const configureStore = (loadStore) => {
         }
       });
       updatedState.data.board.tiles[data.tile_id].type = type;
+
+      // Cheekbloom
+      if (type === "forest") {
+        Object.keys(updatedState.data.board.tiles).forEach((tile) => {
+          if (updatedState.data.board.tiles[tile].occupant.id === 33) {
+            updatedState.data.board.tiles[tile].occupant.health += 1;
+            updatedState.data.board.tiles[tile].occupant.attack += 1;
+          }
+        });
+      }
+      // Cheekbloom
+
       updatedState.data.board.tiles[data.tile_id].owner = data.player;
       const wheelbutton_id = Object.keys(updatedState.wheelbuttons).filter(
         (key) => updatedState.wheelbuttons[key].selected
@@ -1390,12 +1402,46 @@ const configureStore = (loadStore) => {
               data.player &&
             updatedState.data.board.tiles[key].type === "none")
         ) {
+          const occupant = updatedState.data.board.tiles[key].occupant;
           updatedState.data.board.tiles[key].occupant = removeOccupant;
+          const EP = new EventProcessor(updatedState, data);
+          if (occupant.health <= 0 && occupant.effects.lastword) {
+            EP.processLastwordEffect(occupant, key);
+          }
         } else {
           updatedState.data.board.tiles[key].occupant.hasMoved = false;
           updatedState.data.board.tiles[key].occupant.hasAttacked = false;
         }
+
+        //Cheekshrooms
+        if (
+          updatedState.data.board.tiles[key].occupant.id === 28 &&
+          updatedState.data.status.current ===
+            updatedState.data.board.tiles[key].occupant.player
+        ) {
+          updatedState.tiles[key].adjacent.forEach((adjTile) => {
+            if (
+              updatedState.data.board.tiles[adjTile].occupant.player ===
+              data.opponent
+            ) {
+              let target = updatedState.data.board.tiles[adjTile].occupant;
+              if (target.protection) {
+                target.protection = false;
+              } else {
+                target.health -= 1;
+              }
+              updatedState.data.board.tiles[adjTile].occupant =
+                target.health > 0 ? target : removeOccupant;
+              const EP = new EventProcessor(updatedState, data);
+              if (target.health <= 0 && target.effects.lastword) {
+                EP.processLastwordEffect(target, adjTile);
+              }
+            }
+          });
+        }
+        //Cheekshrooms
       });
+
       const anyAdjacent = (tile) =>
         updatedState.data.board.tiles[tile].occupant.player === data.opponent;
       Object.keys(updatedState.data.board.wells).forEach((key) => {
