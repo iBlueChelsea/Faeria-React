@@ -50,7 +50,7 @@ const MulliganModal = (props) => {
     const getdata = new FormData();
     getdata.append("id", props.id);
     axios
-      .post("https://cheekia.loca.lt/faeria/Faeria/utils/getState.php", getdata)
+      .post("/faeria/Faeria/utils/getState.php", getdata)
       .then((res) => {
         const prevState = JSON.parse(res.data);
         newState.data[props.opponent] = prevState.data[props.opponent];
@@ -100,7 +100,7 @@ const MulliganModal = (props) => {
         postdata.append("id", props.id);
         axios
           .post(
-            "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+            "/faeria/Faeria/utils/saveState.php",
             postdata
           )
           .then(() => {

@@ -10,6 +10,7 @@ const Hand = (props) => {
       state.hand[index + 1].selected && props.user === props.owner
         ? "-selected"
         : "";
+    const cardOwner = props.user === props.owner ? "card" : "enemy-card";
     return (
       <Card
         key={id}
@@ -18,7 +19,7 @@ const Hand = (props) => {
         data={props.data.cards[id]}
         height={props.height}
         width="120px"
-        classname={"card" + cardClass}
+        classname={cardOwner + cardClass}
         user={props.user}
         opponent={props.opponent}
         owner={props.owner}

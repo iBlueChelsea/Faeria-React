@@ -9,7 +9,7 @@ let loadStore = {};
 const formdata = new FormData();
 formdata.append("id", document.getElementById("game_id").value);
 axios
-  .post("https://cheekia.loca.lt/faeria/Faeria/utils/getState.php", formdata)
+  .post("/faeria/Faeria/utils/getState.php", formdata)
   .then((res) => {
     loadStore = JSON.parse(res.data);
     configureStore(loadStore);

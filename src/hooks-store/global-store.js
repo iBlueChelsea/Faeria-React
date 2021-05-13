@@ -26,7 +26,7 @@ const configureStore = (loadStore) => {
       getdata.append("id", document.getElementById("game_id").value);
       axios
         .post(
-          "https://cheekia.loca.lt/faeria/Faeria/utils/getState.php",
+          "/faeria/Faeria/utils/getState.php",
           getdata
         )
         .then((res) => {
@@ -37,7 +37,7 @@ const configureStore = (loadStore) => {
           postdata.append("id", data.id);
           axios
             .post(
-              "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+              "/faeria/Faeria/utils/saveState.php",
               postdata
             )
             .catch((error) => {
@@ -90,7 +90,7 @@ const configureStore = (loadStore) => {
       formdata.append("id", document.getElementById("game_id").value);
       axios
         .post(
-          "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+          "/faeria/Faeria/utils/saveState.php",
           formdata
         )
         .catch((error) => {
@@ -194,7 +194,7 @@ const configureStore = (loadStore) => {
       formdata.append("id", document.getElementById("game_id").value);
       axios
         .post(
-          "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+          "/faeria/Faeria/utils/saveState.php",
           formdata
         )
         .catch((error) => {
@@ -211,7 +211,7 @@ const configureStore = (loadStore) => {
       formdata.append("id", document.getElementById("game_id").value);
       axios
         .post(
-          "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+          "/faeria/Faeria/utils/saveState.php",
           formdata
         )
         .catch((error) => {
@@ -267,7 +267,7 @@ const configureStore = (loadStore) => {
       formdata.append("id", document.getElementById("game_id").value);
       axios
         .post(
-          "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+          "/faeria/Faeria/utils/saveState.php",
           formdata
         )
         .catch((error) => {
@@ -479,7 +479,7 @@ const configureStore = (loadStore) => {
           formdata.append("id", document.getElementById("game_id").value);
           axios
             .post(
-              "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+              "/faeria/Faeria/utils/saveState.php",
               formdata
             )
             .catch((error) => {
@@ -498,7 +498,7 @@ const configureStore = (loadStore) => {
       formdata.append("id", document.getElementById("game_id").value);
       axios
         .post(
-          "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+          "/faeria/Faeria/utils/saveState.php",
           formdata
         )
         .catch((error) => {
@@ -515,7 +515,7 @@ const configureStore = (loadStore) => {
       formdata.append("id", document.getElementById("game_id").value);
       axios
         .post(
-          "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+          "/faeria/Faeria/utils/saveState.php",
           formdata
         )
         .catch((error) => {
@@ -535,7 +535,7 @@ const configureStore = (loadStore) => {
       formdata.append("id", document.getElementById("game_id").value);
       axios
         .post(
-          "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+          "/faeria/Faeria/utils/saveState.php",
           formdata
         )
         .catch((error) => {
@@ -633,7 +633,7 @@ const configureStore = (loadStore) => {
       formdata.append("id", document.getElementById("game_id").value);
       axios
         .post(
-          "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+          "/faeria/Faeria/utils/saveState.php",
           formdata
         )
         .catch((error) => {
@@ -1162,7 +1162,7 @@ const configureStore = (loadStore) => {
       formdata.append("id", document.getElementById("game_id").value);
       axios
         .post(
-          "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+          "/faeria/Faeria/utils/saveState.php",
           formdata
         )
         .catch((error) => {
@@ -1264,7 +1264,7 @@ const configureStore = (loadStore) => {
       formdata.append("id", document.getElementById("game_id").value);
       axios
         .post(
-          "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+          "/faeria/Faeria/utils/saveState.php",
           formdata
         )
         .catch((error) => {
@@ -1309,7 +1309,7 @@ const configureStore = (loadStore) => {
       formdata.append("id", document.getElementById("game_id").value);
       axios
         .post(
-          "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+          "/faeria/Faeria/utils/saveState.php",
           formdata
         )
         .catch((error) => {
@@ -1503,7 +1503,7 @@ const configureStore = (loadStore) => {
       formdata.append("id", document.getElementById("game_id").value);
       axios
         .post(
-          "https://cheekia.loca.lt/faeria/Faeria/utils/saveState.php",
+          "/faeria/Faeria/utils/saveState.php",
           formdata
         )
         .catch((error) => {

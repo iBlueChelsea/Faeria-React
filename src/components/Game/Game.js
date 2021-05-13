@@ -36,7 +36,7 @@ const Game = () => {
         let timestamp = Date.now();
         axios
           .post(
-            "https://cheekia.loca.lt/faeria/Faeria/utils/getState.php?timestamp=" +
+            "/faeria/Faeria/utils/getState.php?timestamp=" +
               timestamp,
             formdata
           )
