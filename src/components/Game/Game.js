@@ -4,6 +4,7 @@ import Hand from "./Hand/Hand";
 import Wheel from "./Wheel/Wheel";
 import Infobox from "../UI/Infobox/Infobox";
 import MulliganModal from "../UI/MulliganModal/MulliganModal";
+import ChooseModal from "../UI/ChooseModal/ChooseModal";
 import { useStore } from "../../hooks-store/store";
 import axios from "axios";
 
@@ -27,7 +28,7 @@ const Game = () => {
       dispatch("START_GAME", payload);
     }
     if (
-      (state.data.status.current === opponent && !state.data[user].mulligan ) ||
+      (state.data.status.current === opponent && !state.data[user].mulligan) ||
       (!state.data[user].mulligan && state.data[opponent].mulligan)
     ) {
       const timer = setTimeout(() => {
@@ -36,8 +37,7 @@ const Game = () => {
         let timestamp = Date.now();
         axios
           .post(
-            "/faeria/Faeria/utils/getState.php?timestamp=" +
-              timestamp,
+            "/faeria/Faeria/utils/getState.php?timestamp=" + timestamp,
             formdata
           )
           .then((res) => {
@@ -55,6 +55,12 @@ const Game = () => {
     <MulliganModal user={user} opponent={opponent} id={id} />
   ) : null;
 
+  const choose =
+    state.data.status.current === user &&
+    state.currentAction === "event_choose_occupant" ? (
+      <ChooseModal user={user} opponent={opponent} id={id} />
+    ) : null;
+
   const output = state.data.status.finished ? (
     <h1 style={{ textAlign: "center" }}>
       WINNER: {state.data[state.data.status.winner].name}
@@ -62,6 +68,7 @@ const Game = () => {
   ) : (
     <div style={{ display: "flex", height: "100vh" }}>
       {mulligan}
+      {choose}
       <div
         style={{
           width: "20vw",

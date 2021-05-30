@@ -21,9 +21,13 @@ const WheelButton = (props) => {
 
   const selectHandler = () => {
     if (state.wheelbuttons[props.id].selectable) {
+      const payload = {
+        player: props.user,
+        opponent: props.opponent,
+      };
       switch (props.id) {
         case "wheel-B3":
-          dispatch("DRAW_CARD", props.user);
+          dispatch("DRAW_CARD", payload);
           break;
         case "wheel-C2":
           dispatch("PLUS_FAERIA", props.user);

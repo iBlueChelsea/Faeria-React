@@ -18,6 +18,8 @@ const God = (props) => {
       };
       if (state.currentAction === "event_occupant") {
         dispatch("PROCESS_EVENT_OCCUPANT", payload);
+      } else if (state.currentAction === "gift_occupant") {
+        dispatch("PROCESS_GIFT_OCCUPANT", payload);
       } else {
         dispatch("ATTACK_GOD", payload);
       }

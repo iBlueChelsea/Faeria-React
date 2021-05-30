@@ -28,11 +28,13 @@ const Card = (props) => {
 
   const cardDisabled = () => {};
 
-  const clickAction = state.data[props.user].mulligan
-    ? props.clickAction
-    : state.data.status.current !== props.user || props.owner !== props.user
-    ? cardDisabled
-    : cardHandler;
+  const clickAction =
+    state.data[props.user].mulligan ||
+    state.currentAction === "event_choose_occupant"
+      ? props.clickAction
+      : state.data.status.current !== props.user || props.owner !== props.user
+      ? cardDisabled
+      : cardHandler;
 
   const imgSrc =
     props.owner === props.opponent ? images["cardback"] : images[props.data.id];

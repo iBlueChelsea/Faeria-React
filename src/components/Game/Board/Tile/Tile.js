@@ -39,7 +39,7 @@ const Tile = (props) => {
       };
       if (state.currentAction === "summon_creature") {
         dispatch("SUMMON_CREATURE", payload);
-      } else if (state.currentAction === "occupant_selected") {
+      } else if (state.currentAction === "occupant_selected" || state.currentAction === "event_move_occupant") {
         dispatch("MOVE_OCCUPANT", payload);
       } else if (state.currentAction === "event_tile") {
         dispatch("PROCESS_EVENT_TILE", payload);

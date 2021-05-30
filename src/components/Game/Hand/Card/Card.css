@@ -56,3 +56,21 @@
 .card-mulligan-selected img {
     opacity: 0.4;
 }
+
+.card-choose {
+    border: 6px solid black;
+    border-radius: 12px;
+    width: 360px;
+    height: 480px;
+    margin: 20px;
+    cursor: pointer;
+}
+
+.card-choose:hover {
+    border: 16px solid rgba(255, 254, 197, 0.849);
+    border-radius: 12px;
+    width: 360px;
+    height: 480px;
+    margin: 20px;
+    cursor: pointer;
+}

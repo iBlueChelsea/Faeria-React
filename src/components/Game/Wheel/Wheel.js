@@ -38,6 +38,7 @@ const Wheel = (props) => {
               : Math.sqrt(3) * hexSize * j + Math.sqrt(3) * hexSize + offsetY
           }
           user={props.user}
+          opponent={props.opponent}
         />
       );
     });

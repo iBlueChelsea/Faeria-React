@@ -25,10 +25,7 @@ const configureStore = (loadStore) => {
       const getdata = new FormData();
       getdata.append("id", document.getElementById("game_id").value);
       axios
-        .post(
-          "/faeria/Faeria/utils/getState.php",
-          getdata
-        )
+        .post("/faeria/Faeria/utils/getState.php", getdata)
         .then((res) => {
           const prevState = JSON.parse(res.data);
           newState.data[data.opponent] = prevState.data[data.opponent];
@@ -36,10 +33,7 @@ const configureStore = (loadStore) => {
           postdata.append("react_state", JSON.stringify(newState));
           postdata.append("id", data.id);
           axios
-            .post(
-              "/faeria/Faeria/utils/saveState.php",
-              postdata
-            )
+            .post("/faeria/Faeria/utils/saveState.php", postdata)
             .catch((error) => {
               console.log("Network Error", error.message);
             });
@@ -89,10 +83,7 @@ const configureStore = (loadStore) => {
       formdata.append("react_state", JSON.stringify(updatedState));
       formdata.append("id", document.getElementById("game_id").value);
       axios
-        .post(
-          "/faeria/Faeria/utils/saveState.php",
-          formdata
-        )
+        .post("/faeria/Faeria/utils/saveState.php", formdata)
         .catch((error) => {
           console.log("Network Error", error.message);
         });
@@ -169,34 +160,34 @@ const configureStore = (loadStore) => {
       updatedState.tiles = newTileState;
       return updatedState;
     },
-    DRAW_CARD: (currentState, player) => {
+    DRAW_CARD: (currentState, data) => {
       const updatedState = JSON.parse(JSON.stringify(currentState));
       const god = {
         player1: "D6",
         player2: "D0",
       };
-      if (updatedState.data[player].deck.length > 0) {
-        if (updatedState.data[player].hand.length < 9) {
-          updatedState.data[player].hand.push(
-            updatedState.data[player].deck.splice(0, 1)[0]
+      if (updatedState.data[data.player].deck.length > 0) {
+        if (updatedState.data[data.player].hand.length < 9) {
+          updatedState.data[data.player].hand.push(
+            updatedState.data[data.player].deck.splice(0, 1)[0]
           );
         } else {
-          updatedState.data[player].deck.splice(0, 1);
+          updatedState.data[data.player].deck.splice(0, 1);
         }
       } else {
-        updatedState.data.board.gods[god[player]].health -= ++updatedState.data[
-          player
-        ].health_dmg;
+        updatedState.data.board.gods[god[data.player]].health -= ++updatedState
+          .data[data.player].health_dmg;
+        if (updatedState.data.board.gods[god[data.player]].health <= 0) {
+          updatedState.data.status.finished = true;
+          updatedState.data.status.winner = data.opponent;
+        }
       }
-      updatedState.data[player].wheel_used = true;
+      updatedState.data[data.player].wheel_used = true;
       const formdata = new FormData();
       formdata.append("react_state", JSON.stringify(updatedState));
       formdata.append("id", document.getElementById("game_id").value);
       axios
-        .post(
-          "/faeria/Faeria/utils/saveState.php",
-          formdata
-        )
+        .post("/faeria/Faeria/utils/saveState.php", formdata)
         .catch((error) => {
           console.log("Network Error", error.message);
         });
@@ -210,10 +201,7 @@ const configureStore = (loadStore) => {
       formdata.append("react_state", JSON.stringify(updatedState));
       formdata.append("id", document.getElementById("game_id").value);
       axios
-        .post(
-          "/faeria/Faeria/utils/saveState.php",
-          formdata
-        )
+        .post("/faeria/Faeria/utils/saveState.php", formdata)
         .catch((error) => {
           console.log("Network Error", error.message);
         });
@@ -266,10 +254,7 @@ const configureStore = (loadStore) => {
       formdata.append("react_state", JSON.stringify(updatedState));
       formdata.append("id", document.getElementById("game_id").value);
       axios
-        .post(
-          "/faeria/Faeria/utils/saveState.php",
-          formdata
-        )
+        .post("/faeria/Faeria/utils/saveState.php", formdata)
         .catch((error) => {
           console.log("Network Error", error.message);
         });
@@ -478,10 +463,7 @@ const configureStore = (loadStore) => {
           formdata.append("react_state", JSON.stringify(updatedState));
           formdata.append("id", document.getElementById("game_id").value);
           axios
-            .post(
-              "/faeria/Faeria/utils/saveState.php",
-              formdata
-            )
+            .post("/faeria/Faeria/utils/saveState.php", formdata)
             .catch((error) => {
               console.log("Network Error", error.message);
             });
@@ -497,10 +479,7 @@ const configureStore = (loadStore) => {
       formdata.append("react_state", JSON.stringify(updatedState));
       formdata.append("id", document.getElementById("game_id").value);
       axios
-        .post(
-          "/faeria/Faeria/utils/saveState.php",
-          formdata
-        )
+        .post("/faeria/Faeria/utils/saveState.php", formdata)
         .catch((error) => {
           console.log("Network Error", error.message);
         });
@@ -514,10 +493,7 @@ const configureStore = (loadStore) => {
       formdata.append("react_state", JSON.stringify(updatedState));
       formdata.append("id", document.getElementById("game_id").value);
       axios
-        .post(
-          "/faeria/Faeria/utils/saveState.php",
-          formdata
-        )
+        .post("/faeria/Faeria/utils/saveState.php", formdata)
         .catch((error) => {
           console.log("Network Error", error.message);
         });
@@ -534,13 +510,16 @@ const configureStore = (loadStore) => {
       formdata.append("react_state", JSON.stringify(updatedState));
       formdata.append("id", document.getElementById("game_id").value);
       axios
-        .post(
-          "/faeria/Faeria/utils/saveState.php",
-          formdata
-        )
+        .post("/faeria/Faeria/utils/saveState.php", formdata)
         .catch((error) => {
           console.log("Network Error", error.message);
         });
+      return updatedState;
+    },
+    CHOOSE_CARD: (currentState, data) => {
+      let updatedState = JSON.parse(JSON.stringify(currentState));
+      const EP = new EventProcessor(updatedState, data);
+      EP.processSpecialEffect(data.id, { tile: data.tile });
       return updatedState;
     },
     SUMMON_CREATURE: (currentState, data) => {
@@ -620,7 +599,9 @@ const configureStore = (loadStore) => {
         } else {
           updatedState.wheelbuttons["wheel-B2"].selectable = true;
         }
-        updatedState.currentAction = "";
+        if (updatedState.currentAction !== "event_choose_occupant") {
+          updatedState.currentAction = "";
+        }
       }
       updatedState.hand = newHand;
       updatedState.data[data.player].faeria -=
@@ -628,14 +609,21 @@ const configureStore = (loadStore) => {
           updatedState.data[data.player].hand[selected_card_id - 1]
         ].faeria_cost;
       updatedState.data[data.player].hand.splice(selected_card_id - 1, 1);
+
+      //Balloon Cheek
+      const EP = new EventProcessor(updatedState, data);
+      EP.processSpecialEffect(43, {
+        action: "summon",
+        tile: data.tile_id,
+        attack: 1,
+      });
+      //Balloon Cheek
+
       const formdata = new FormData();
       formdata.append("react_state", JSON.stringify(updatedState));
       formdata.append("id", document.getElementById("game_id").value);
       axios
-        .post(
-          "/faeria/Faeria/utils/saveState.php",
-          formdata
-        )
+        .post("/faeria/Faeria/utils/saveState.php", formdata)
         .catch((error) => {
           console.log("Network Error", error.message);
         });
@@ -1114,7 +1102,8 @@ const configureStore = (loadStore) => {
       if (
         updatedState.data.board.tiles[data.tile_id].occupant.movement.dash >
           0 &&
-        !updatedState.data.board.tiles[data.tile_id].occupant.hasDashed
+        !updatedState.data.board.tiles[data.tile_id].occupant.hasDashed &&
+        updatedState.currentAction !== "event_move_occupant"
       ) {
         updatedState.data.board.tiles[data.tile_id].occupant.hasDashed = true;
         if (
@@ -1134,11 +1123,13 @@ const configureStore = (loadStore) => {
           });
         }
       } else {
-        updatedState.data.board.tiles[data.tile_id].occupant.hasMoved = true;
-        if (updatedState.data.board.tiles[data.tile_id].occupant.ranged) {
-          updatedState.data.board.tiles[
-            data.tile_id
-          ].occupant.hasAttacked = true;
+        if (updatedState.currentAction !== "event_move_occupant") {
+          updatedState.data.board.tiles[data.tile_id].occupant.hasMoved = true;
+          if (updatedState.data.board.tiles[data.tile_id].occupant.ranged) {
+            updatedState.data.board.tiles[
+              data.tile_id
+            ].occupant.hasAttacked = true;
+          }
         }
         Object.keys(updatedState.data.board.wells).forEach((key) => {
           if (
@@ -1161,10 +1152,7 @@ const configureStore = (loadStore) => {
       formdata.append("react_state", JSON.stringify(updatedState));
       formdata.append("id", document.getElementById("game_id").value);
       axios
-        .post(
-          "/faeria/Faeria/utils/saveState.php",
-          formdata
-        )
+        .post("/faeria/Faeria/utils/saveState.php", formdata)
         .catch((error) => {
           console.log("Network Error", error.message);
         });
@@ -1232,11 +1220,31 @@ const configureStore = (loadStore) => {
       attacker.hasAttacked = true;
       attacker.hasMoved = true;
       attacker.hasDashed = true;
+
+      const EP = new EventProcessor(updatedState, data);
+
+      //Balloon Cheek
+      if (attacker.health <= 0) {
+        EP.processSpecialEffect(43, {
+          action: "remove",
+          tile: selected_occupant_id,
+          attack: -1,
+        });
+      }
+      if (defender.health <= 0) {
+        EP.processSpecialEffect(43, {
+          action: "remove",
+          tile: data.tile_id,
+          attack: -1,
+        });
+      }
+      //Balloon Cheek
+
       updatedState.data.board.tiles[selected_occupant_id].occupant =
         attacker.health > 0 ? attacker : removeOccupant;
       updatedState.data.board.tiles[data.tile_id].occupant =
         defender.health > 0 ? defender : removeOccupant;
-      const EP = new EventProcessor(updatedState, data);
+
       if (attacker.health <= 0 && attacker.effects.lastword) {
         EP.processLastwordEffect(attacker, selected_occupant_id);
       }
@@ -1263,10 +1271,7 @@ const configureStore = (loadStore) => {
       formdata.append("react_state", JSON.stringify(updatedState));
       formdata.append("id", document.getElementById("game_id").value);
       axios
-        .post(
-          "/faeria/Faeria/utils/saveState.php",
-          formdata
-        )
+        .post("/faeria/Faeria/utils/saveState.php", formdata)
         .catch((error) => {
           console.log("Network Error", error.message);
         });
@@ -1308,10 +1313,7 @@ const configureStore = (loadStore) => {
       formdata.append("react_state", JSON.stringify(updatedState));
       formdata.append("id", document.getElementById("game_id").value);
       axios
-        .post(
-          "/faeria/Faeria/utils/saveState.php",
-          formdata
-        )
+        .post("/faeria/Faeria/utils/saveState.php", formdata)
         .catch((error) => {
           console.log("Network Error", error.message);
         });
@@ -1430,9 +1432,22 @@ const configureStore = (loadStore) => {
               } else {
                 target.health -= 1;
               }
+
+              const EP = new EventProcessor(updatedState, data);
+
+              //Balloon Cheek
+              if (target.health <= 0) {
+                EP.processSpecialEffect(43, {
+                  action: "remove",
+                  tile: adjTile,
+                  attack: -1,
+                });
+              }
+              //Balloon Cheek
+
               updatedState.data.board.tiles[adjTile].occupant =
                 target.health > 0 ? target : removeOccupant;
-              const EP = new EventProcessor(updatedState, data);
+
               if (target.health <= 0 && target.effects.lastword) {
                 EP.processLastwordEffect(target, adjTile);
               }
@@ -1502,10 +1517,7 @@ const configureStore = (loadStore) => {
       formdata.append("react_state", JSON.stringify(updatedState));
       formdata.append("id", document.getElementById("game_id").value);
       axios
-        .post(
-          "/faeria/Faeria/utils/saveState.php",
-          formdata
-        )
+        .post("/faeria/Faeria/utils/saveState.php", formdata)
         .catch((error) => {
           console.log("Network Error", error.message);
         });

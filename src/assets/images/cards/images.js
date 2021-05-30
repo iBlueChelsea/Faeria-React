@@ -36,6 +36,20 @@ const images = {
     33: 'assets/images/cards/cheekbloom_spirit.jpg',
     34: 'assets/images/cards/cheekshield_spirit.jpg',
     35: 'assets/images/cards/cheek_dancers.jpg',
+    36: 'assets/images/cards/cheeksphynx.jpg',
+    37: 'assets/images/cards/cheeksphynx_a.jpg',
+    38: 'assets/images/cards/cheeksphynx_b.jpg',
+    39: 'assets/images/cards/cheeksphynx_c.jpg',
+    40: 'assets/images/cards/mummy_cheek.jpg',
+    41: 'assets/images/cards/cheeksquito.jpg',
+    42: 'assets/images/cards/cheek_air_balloon.jpg',
+    43: 'assets/images/cards/balloon_cheek.jpg',
+    44: 'assets/images/cards/dragon_cheekrider.jpg',
+    45: 'assets/images/cards/baby_dragoncheek.jpg',
+    46: 'assets/images/cards/cheek_glider.jpg',
+    47: 'assets/images/cards/cheek_pyramid.jpg',
+    48: 'assets/images/cards/cheek_wind.jpg',
+    49: 'assets/images/cards/canopic_cheekjar.jpg',
 }
 
 export default images;
