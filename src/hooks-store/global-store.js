@@ -336,7 +336,8 @@ const configureStore = (loadStore) => {
             !updatedState.tiles[tile].adjacent.some(
               canSpawnAdjacentToFriendlies
             ) &&
-            (!landtypes.includes(updatedState.data.board.tiles[tile].type) ||
+            ((!landtypes.includes(updatedState.data.board.tiles[tile].type) &&
+              landtypes.length) ||
               updatedState.data.board.tiles[tile].owner !== data.player)
           ) {
             return false;
@@ -368,7 +369,10 @@ const configureStore = (loadStore) => {
           if (updatedState.data.board.tiles[tile].owner !== data.player) {
             return false;
           }
-          if (!landtypes.includes(updatedState.data.board.tiles[tile].type)) {
+          if (
+            !landtypes.includes(updatedState.data.board.tiles[tile].type) &&
+            landtypes.length
+          ) {
             return false;
           }
         }
@@ -520,6 +524,41 @@ const configureStore = (loadStore) => {
       let updatedState = JSON.parse(JSON.stringify(currentState));
       const EP = new EventProcessor(updatedState, data);
       EP.processSpecialEffect(data.id, { tile: data.tile });
+
+      //Wheel
+      Object.keys(updatedState.wheelbuttons).forEach((wheel) => {
+        updatedState.wheelbuttons[wheel].selectable = true;
+        updatedState.wheelbuttons[wheel].selected = false;
+      });
+
+      //Hand
+      Object.keys(updatedState.hand).forEach((card) => {
+        updatedState.hand[card].selectable = true;
+        updatedState.hand[card].selected = false;
+      });
+
+      //Tiles and Occupants
+      Object.keys(updatedState.tiles).forEach((tile) => {
+        updatedState.tiles[tile].selectable = false;
+        updatedState.tiles[tile].selected = false;
+        updatedState.tiles[tile].occupantSelectable = true;
+        updatedState.tiles[tile].occupantSelected = false;
+      });
+
+      //Gods
+      Object.keys(updatedState.gods).forEach((god) => {
+        updatedState.gods[god].selectable = false;
+      });
+
+      const formdata = new FormData();
+      formdata.append("react_state", JSON.stringify(updatedState));
+      formdata.append("id", document.getElementById("game_id").value);
+      axios
+        .post("/faeria/Faeria/utils/saveState.php", formdata)
+        .catch((error) => {
+          console.log("Network Error", error.message);
+        });
+
       return updatedState;
     },
     SUMMON_CREATURE: (currentState, data) => {
@@ -553,7 +592,9 @@ const configureStore = (loadStore) => {
       if (!card.movement.haste) {
         newOccupant.hasMoved = true;
         newOccupant.hasAttacked = true;
+        newOccupant.canCollect = false;
       } else {
+        newOccupant.canCollect = true;
         newOccupant.hasMoved = false;
         newOccupant.hasAttacked = false;
         if (card.movement.dash === 0) {
@@ -584,7 +625,10 @@ const configureStore = (loadStore) => {
         const EP = new EventProcessor(updatedState, data);
         newHand[selected_card_id].selectable = false;
         EP.initGiftEffect(updatedState.data.board.tiles[data.tile_id].occupant);
-      } else {
+      } else if (
+        updatedState.currentAction !== "event_choose_occupant" &&
+        updatedState.data.board.tiles[data.tile_id].occupant.movement.dash === 0
+      ) {
         Object.keys(updatedState.tiles).forEach((key) => {
           updatedState.tiles[key].selectable = false;
           updatedState.tiles[key].occupantSelectable = true;
@@ -599,9 +643,12 @@ const configureStore = (loadStore) => {
         } else {
           updatedState.wheelbuttons["wheel-B2"].selectable = true;
         }
-        if (updatedState.currentAction !== "event_choose_occupant") {
-          updatedState.currentAction = "";
-        }
+        updatedState.currentAction = "";
+      }
+      if (
+        updatedState.data.board.tiles[data.tile_id].occupant.movement.dash > 0
+      ) {
+        updatedState.tiles[data.tile_id].occupantSelectable = true;
       }
       updatedState.hand = newHand;
       updatedState.data[data.player].faeria -=
@@ -948,6 +995,15 @@ const configureStore = (loadStore) => {
         if (updatedState.data.board.tiles[data.tile_id].occupant.hasAttacked) {
           return false;
         }
+        if (isTaunted) {
+          if (
+            !updatedState.tiles[data.tile_id].adjacent.includes(tile_id) ||
+            (updatedState.tiles[data.tile_id].adjacent.includes(tile_id) &&
+              !updatedState.data.board.tiles[tile_id].occupant.taunt)
+          ) {
+            return false;
+          }
+        }
         return true;
       };
       if (updatedState.tiles[data.tile_id].occupantSelected) {
@@ -1072,6 +1128,7 @@ const configureStore = (loadStore) => {
         divine: false,
         protection: false,
         ranged: false,
+        canCollect: false,
         hasMoved: false,
         hasDashed: false,
         hasAttacked: false,
@@ -1136,7 +1193,10 @@ const configureStore = (loadStore) => {
             updatedState.data.board.wells[key].adjacent.includes(
               data.tile_id
             ) &&
-            updatedState.data.board.wells[key].available
+            updatedState.data.board.wells[key].available &&
+            updatedState.data.board.tiles[data.tile_id].occupant.canCollect &&
+            updatedState.data.board.tiles[data.tile_id].occupant.player ===
+              data.player
           ) {
             updatedState.data.board.wells[key].available = false;
             updatedState.data.board.wells[key].collected = true;
@@ -1196,6 +1256,7 @@ const configureStore = (loadStore) => {
         divine: false,
         protection: false,
         ranged: false,
+        canCollect: false,
         hasMoved: false,
         hasDashed: false,
         hasAttacked: false,
@@ -1375,6 +1436,7 @@ const configureStore = (loadStore) => {
         divine: false,
         protection: false,
         ranged: false,
+        canCollect: false,
         hasMoved: false,
         hasDashed: false,
         hasAttacked: false,
@@ -1411,8 +1473,15 @@ const configureStore = (loadStore) => {
             EP.processLastwordEffect(occupant, key);
           }
         } else {
+          //Cheeksquito
+          if (updatedState.data.board.tiles[key].occupant.id !== 41) {
+            updatedState.data.board.tiles[key].occupant.canCollect = true;
+          }
+          //Cheeksquito
+
           updatedState.data.board.tiles[key].occupant.hasMoved = false;
           updatedState.data.board.tiles[key].occupant.hasAttacked = false;
+          updatedState.data.board.tiles[key].occupant.hasDashed = true;
         }
 
         //Cheekshrooms
@@ -1458,7 +1527,8 @@ const configureStore = (loadStore) => {
       });
 
       const anyAdjacent = (tile) =>
-        updatedState.data.board.tiles[tile].occupant.player === data.opponent;
+        updatedState.data.board.tiles[tile].occupant.player === data.opponent &&
+        updatedState.data.board.tiles[tile].occupant.canCollect;
       Object.keys(updatedState.data.board.wells).forEach((key) => {
         if (updatedState.data.board.wells[key].adjacent.some(anyAdjacent)) {
           updatedState.data.board.wells[key].available = false;

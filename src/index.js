@@ -12,13 +12,21 @@ axios
   .post("/faeria/Faeria/utils/getState.php", formdata)
   .then((res) => {
     loadStore = JSON.parse(res.data);
-    configureStore(loadStore);
-    ReactDOM.render(
-      <React.StrictMode>
-        <App />
-      </React.StrictMode>,
-      document.getElementById("game")
-    );
+    axios
+      .post("/faeria/Faeria/utils/getCardsStore.php")
+      .then((res) => {
+        loadStore.cardLibrary = res.data;
+        configureStore(loadStore);
+        ReactDOM.render(
+          <React.StrictMode>
+            <App />
+          </React.StrictMode>,
+          document.getElementById("game")
+        );
+      })
+      .catch((error) => {
+        console.log("Network Error", error.message);
+      });
   })
   .catch((error) => {
     console.log("Network Error", error.message);

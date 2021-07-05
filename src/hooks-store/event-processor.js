@@ -16,6 +16,8 @@ export default class EventProcessor {
       46: "processEvent_46",
       48: "processEvent_48",
       49: "processEvent_49",
+      51: "processEvent_51",
+      52: "processEvent_52",
     };
     this.summonEffectLibrary = {
       8: "processSummonEffect_8",
@@ -198,6 +200,25 @@ export default class EventProcessor {
     });
   }
 
+  setSelectStateForOccupantsDivine(friendly, enemy) {
+    const playerCheck = [];
+    if (friendly) {
+      playerCheck.push(this.data.player);
+    }
+    if (enemy) {
+      playerCheck.push(this.data.opponent);
+    }
+    Object.keys(this.state.data.board.tiles).forEach((key) => {
+      if (
+        playerCheck.includes(this.state.data.board.tiles[key].occupant.player)
+      ) {
+        this.state.tiles[key].occupantSelectable = true;
+      } else {
+        this.state.tiles[key].occupantSelectable = false;
+      }
+    });
+  }
+
   setSelectStateForConditionalOccupants(friendly, enemy, attack) {
     const playerCheck = [];
     if (friendly) {
@@ -268,6 +289,7 @@ export default class EventProcessor {
       divine: false,
       protection: false,
       ranged: false,
+      canCollect: false,
       hasMoved: false,
       hasDashed: false,
       hasAttacked: false,
@@ -357,11 +379,6 @@ export default class EventProcessor {
   }
 
   handleCustomDrawLogic(index, length, dmgAllowed) {
-    const god = {
-      player1: "D6",
-      player2: "D0",
-    };
-
     if (index !== -1) {
       if (this.state.data[this.data.player].hand.length < length) {
         this.state.data[this.data.player].hand.push(
@@ -371,9 +388,10 @@ export default class EventProcessor {
         this.state.data[this.data.player].deck.splice(index, 1);
       }
     } else if (dmgAllowed) {
-      this.state.data.board.gods[god[this.data.player]].health -= ++this.state
-        .data[this.data.player].health_dmg;
-      if (this.state.data.board.gods[god[this.data.player]].health <= 0) {
+      this.state.data.board.gods[this.getGodTile()].health -= ++this.state.data[
+        this.data.player
+      ].health_dmg;
+      if (this.state.data.board.gods[this.getGodTile()].health <= 0) {
         this.state.data.status.finished = true;
         this.state.data.status.winner = this.data.opponent;
       }
@@ -416,6 +434,7 @@ export default class EventProcessor {
           divine: false,
           protection: false,
           ranged: false,
+          canCollect: false,
           hasMoved: true,
           hasDashed: false,
           hasAttacked: true,
@@ -452,6 +471,7 @@ export default class EventProcessor {
           divine: true,
           protection: true,
           ranged: false,
+          canCollect: false,
           hasMoved: true,
           hasDashed: false,
           hasAttacked: true,
@@ -488,6 +508,7 @@ export default class EventProcessor {
           divine: false,
           protection: false,
           ranged: false,
+          canCollect: params.canCollect,
           hasMoved: params.hasMoved,
           hasDashed: false,
           hasAttacked: params.hasAttacked,
@@ -524,6 +545,7 @@ export default class EventProcessor {
           divine: false,
           protection: false,
           ranged: false,
+          canCollect: false,
           hasMoved: true,
           hasDashed: false,
           hasAttacked: true,
@@ -560,6 +582,7 @@ export default class EventProcessor {
           divine: false,
           protection: false,
           ranged: false,
+          canCollect: false,
           hasMoved: true,
           hasDashed: false,
           hasAttacked: true,
@@ -596,6 +619,7 @@ export default class EventProcessor {
           divine: false,
           protection: false,
           ranged: false,
+          canCollect: false,
           hasMoved: true,
           hasDashed: false,
           hasAttacked: true,
@@ -632,6 +656,7 @@ export default class EventProcessor {
           divine: false,
           protection: false,
           ranged: false,
+          canCollect: false,
           hasMoved: true,
           hasDashed: false,
           hasAttacked: true,
@@ -668,6 +693,7 @@ export default class EventProcessor {
           divine: false,
           protection: false,
           ranged: false,
+          canCollect: false,
           hasMoved: true,
           hasDashed: false,
           hasAttacked: true,
@@ -898,7 +924,7 @@ export default class EventProcessor {
   //0 - Explore
   processEvent_0(process) {
     if (process === "revert") {
-      this.setSelectStateForOccupants(true, false);
+      this.setSelectStateForOccupantsDivine(true, false);
       this.setSelectStateForAllTiles(false);
       this.state.currentAction = "";
     }
@@ -908,7 +934,7 @@ export default class EventProcessor {
       this.state.currentAction = "event_tile";
     }
     if (process === "handle") {
-      this.setSelectStateForOccupants(true, false);
+      this.setSelectStateForOccupantsDivine(true, false);
       this.setSelectStateForAllTiles(false);
       this.state.data[this.data.player].faeria += 2;
       this.state.data.board.tiles[this.data.tile_id].type = "prairie";
@@ -919,7 +945,7 @@ export default class EventProcessor {
   //5 - Song of the Mercheek
   processEvent_5(process) {
     if (process === "revert") {
-      this.setSelectStateForOccupants(true, false);
+      this.setSelectStateForOccupantsDivine(true, false);
       this.state.currentAction = "";
     }
     if (process === "init") {
@@ -927,7 +953,7 @@ export default class EventProcessor {
       this.state.currentAction = "event_occupant";
     }
     if (process === "handle") {
-      this.setSelectStateForOccupants(true, false);
+      this.setSelectStateForOccupantsDivine(true, false);
       const target = this.state.data.board.tiles[this.data.tile_id].occupant;
       target.health = Math.floor(target.health / 2);
       target.attack =
@@ -1009,6 +1035,7 @@ export default class EventProcessor {
               hasAttacked:
                 this.state.data.board.tiles[tile].occupant.hasAttacked,
               hasMoved: this.state.data.board.tiles[tile].occupant.hasMoved,
+              canCollect: this.state.data.board.tiles[tile].occupant.canCollect,
             }
           );
         });
@@ -1018,7 +1045,7 @@ export default class EventProcessor {
   //17 - Cheekblast
   processEvent_17(process) {
     if (process === "revert") {
-      this.setSelectStateForOccupants(true, false);
+      this.setSelectStateForOccupantsDivine(true, false);
       this.setSelectStateForGods(false);
       this.state.currentAction = "";
     }
@@ -1028,7 +1055,7 @@ export default class EventProcessor {
       this.state.currentAction = "event_occupant";
     }
     if (process === "handle") {
-      this.setSelectStateForOccupants(true, false);
+      this.setSelectStateForOccupantsDivine(true, false);
       this.setSelectStateForGods(false);
       if (this.data.event === "occupant") {
         const target = this.state.data.board.tiles[this.data.tile_id].occupant;
@@ -1086,7 +1113,7 @@ export default class EventProcessor {
   //34 - Cheekshield Spirit
   processEvent_34(process) {
     if (process === "revert") {
-      this.setSelectStateForOccupants(true, false);
+      this.setSelectStateForOccupantsDivine(true, false);
       this.state.currentAction = "";
     }
     if (process === "init") {
@@ -1094,7 +1121,7 @@ export default class EventProcessor {
       this.state.currentAction = "event_occupant";
     }
     if (process === "handle") {
-      this.setSelectStateForOccupants(true, false);
+      this.setSelectStateForOccupantsDivine(true, false);
       this.state.data.board.tiles[this.data.tile_id].occupant.health += 4;
       this.state.data.board.tiles[this.data.tile_id].occupant.attack += 2;
     }
@@ -1103,7 +1130,7 @@ export default class EventProcessor {
   //35 - Cheek Dancers
   processEvent_35(process) {
     if (process === "revert") {
-      this.setSelectStateForOccupants(true, false);
+      this.setSelectStateForOccupantsDivine(true, false);
       this.state.currentAction = "";
     }
     if (process === "init") {
@@ -1111,7 +1138,7 @@ export default class EventProcessor {
       this.state.currentAction = "event_occupant";
     }
     if (process === "handle") {
-      this.setSelectStateForOccupants(true, false);
+      this.setSelectStateForOccupantsDivine(true, false);
       this.state.data.board.tiles[this.data.tile_id].occupant.health += 4;
       this.state.data.board.tiles[this.data.tile_id].occupant.taunt = true;
     }
@@ -1120,7 +1147,7 @@ export default class EventProcessor {
   //46 - Cheek Glider
   processEvent_46(process) {
     if (process === "revert") {
-      this.setSelectStateForOccupants(true, false);
+      this.setSelectStateForOccupantsDivine(true, false);
       this.state.currentAction = "";
     }
     if (process === "init") {
@@ -1132,7 +1159,7 @@ export default class EventProcessor {
         this.state.data.board.tiles[this.data.tile_id].occupant.movement.special
           .flying;
 
-      this.setSelectStateForOccupants(true, false);
+      this.setSelectStateForOccupantsDivine(true, false);
       this.state.data.board.tiles[this.data.tile_id].occupant.movement.range =
         Math.max(
           this.state.data.board.tiles[this.data.tile_id].occupant.movement
@@ -1158,15 +1185,15 @@ export default class EventProcessor {
   //48 - Cheek Wind
   processEvent_48(process) {
     if (process === "revert") {
-      this.setSelectStateForOccupants(true, false);
+      this.setSelectStateForOccupantsDivine(true, false);
       this.state.currentAction = "";
     }
     if (process === "init") {
-      this.setSelectStateForOccupants(true, false);
+      this.setSelectStateForOccupants(true, true);
       this.state.currentAction = "event_occupant";
     }
     if (process === "handle") {
-      this.setSelectStateForOccupants(false, false);
+      this.setSelectStateForOccupantsDivine(false, false);
       this.state.tiles[this.data.tile_id].occupantSelected = true;
       this.state.tiles[this.data.tile_id].occupantSelectable = true;
       this.setSelectStateForMovementTiles();
@@ -1177,7 +1204,7 @@ export default class EventProcessor {
   //49 - Canopic Cheekjar
   processEvent_49(process) {
     if (process === "revert") {
-      this.setSelectStateForOccupants(true, false);
+      this.setSelectStateForOccupantsDivine(true, false);
       this.state.currentAction = "";
     }
     if (process === "init") {
@@ -1185,10 +1212,18 @@ export default class EventProcessor {
       this.state.currentAction = "event_occupant";
     }
     if (process === "handle") {
-      this.setSelectStateForOccupants(true, false);
-      const target = this.state.data.board.tiles[this.data.tile_id].occupant;
-      target.attack = target.base_attack;
-      target.health = target.base_health;
+      this.setSelectStateForOccupantsDivine(true, false);
+      const target = JSON.parse(JSON.stringify(this.state)).cardLibrary[
+        this.state.data.board.tiles[this.data.tile_id].occupant.id
+      ];
+      target.land_cost.wild = Object.values(target.land_cost).reduce(
+        (sum, current) => sum + current
+      );
+      Object.keys(target.land_cost).forEach((land) => {
+        if (land !== "wild") {
+          target.land_cost[land] = 0;
+        }
+      });
       this.state.data.board.tiles[this.data.tile_id].occupant =
         this.getRemoveOccupant(this.data.tile_id);
       if (target.effects.lastword) {
@@ -1204,6 +1239,29 @@ export default class EventProcessor {
       if (this.state.data[this.data.player].hand.length < 10) {
         this.state.data[this.data.player].hand.push(card_id);
       }
+    }
+  }
+
+  //51 - Book of Cheek
+  processEvent_51(process) {
+    if (process === "handle") {
+      for (let i = 0; i < 3; i++) {
+        this.handleCustomDrawLogic(
+          this.state.data[this.data.player].deck.findIndex((card) => card),
+          10,
+          true
+        );
+      }
+    }
+  }
+
+  //52 - Milk of the Cheek
+  processEvent_52(process) {
+    if (process === "handle") {
+      this.state.data.board.gods[this.getGodTile()].health = Math.min(
+        20,
+        this.state.data.board.gods[this.getGodTile()].health + 5
+      );
     }
   }
 
@@ -1286,6 +1344,11 @@ export default class EventProcessor {
       cards: [37, 38, 39],
       tile: this.data.tile_id,
     };
+    this.setSelectStateForOccupants(false, false);
+    this.setSelectStateForAllTiles(false);
+    this.setSelectStateForGods(false);
+    this.setSelectStateForHand(false);
+    this.setSelectStateForWheel(false);
   }
 
   //37 - Cheeksphynx A
@@ -1333,6 +1396,18 @@ export default class EventProcessor {
           target.health > 0 ? target : this.getRemoveOccupant(adjTile);
         if (target.health <= 0 && target.effects.lastword) {
           this.processLastwordEffect(target, adjTile);
+        }
+      }
+    });
+    Object.keys(this.state.gods).forEach((god) => {
+      if (
+        this.state.gods[god].adjacent.includes(tile) &&
+        occupant.player !== this.state.gods[god].player
+      ) {
+        this.state.data.board.gods[god].health -= 5;
+        if (this.state.data.board.gods[god].health <= 0) {
+          this.state.data.status.finished = true;
+          this.state.data.status.winner = occupant.player;
         }
       }
     });
@@ -1389,12 +1464,15 @@ export default class EventProcessor {
       if (this.data.tile_id !== selected_occupant_id) {
         this.state.data.board.tiles[this.data.tile_id].occupant.player =
           this.data.player;
+        this.state.data.board.tiles[
+          this.data.tile_id
+        ].occupant.canCollect = false;
         this.state.data.board.tiles[this.data.tile_id].occupant.hasMoved = true;
         this.state.data.board.tiles[
           this.data.tile_id
         ].occupant.hasAttacked = true;
       }
-      this.setSelectStateForOccupants(true, false);
+      this.setSelectStateForOccupantsDivine(true, false);
     }
   }
 
@@ -1423,7 +1501,7 @@ export default class EventProcessor {
           this.processLastwordEffect(target, this.data.tile_id);
         }
       }
-      this.setSelectStateForOccupants(true, false);
+      this.setSelectStateForOccupantsDivine(true, false);
     }
   }
 
@@ -1443,7 +1521,7 @@ export default class EventProcessor {
             player: this.data.opponent,
           });
       }
-      this.setSelectStateForOccupants(true, false);
+      this.setSelectStateForOccupantsDivine(true, false);
     }
   }
 
@@ -1472,7 +1550,7 @@ export default class EventProcessor {
           this.processLastwordEffect(target, this.data.tile_id);
         }
       }
-      this.setSelectStateForOccupants(true, false);
+      this.setSelectStateForOccupantsDivine(true, false);
     }
   }
 
@@ -1488,7 +1566,7 @@ export default class EventProcessor {
     if (process === "handle") {
       this.state.data.board.tiles[this.data.tile_id].occupant.health += 4;
       this.state.data.board.tiles[this.data.tile_id].occupant.attack += 2;
-      this.setSelectStateForOccupants(true, false);
+      this.setSelectStateForOccupantsDivine(true, false);
     }
   }
 
@@ -1505,7 +1583,7 @@ export default class EventProcessor {
       this.state.currentAction = "gift_occupant";
     }
     if (process === "handle") {
-      this.setSelectStateForOccupants(true, false);
+      this.setSelectStateForOccupantsDivine(true, false);
       this.setSelectStateForGods(false);
       if (this.data.event === "occupant") {
         const target = this.state.data.board.tiles[this.data.tile_id].occupant;
@@ -1592,21 +1670,27 @@ export default class EventProcessor {
 
   //37 - Cheeksphynx A
   processSpecialEffect_37(params) {
-    const occupant = this.state.data.board.tiles[params.tile].occupant;
+    const occupant = JSON.parse(
+      JSON.stringify(this.state.data.board.tiles[params.tile].occupant)
+    );
     occupant.id = this.data.id;
     this.processSummonEffect(occupant);
   }
 
   //38 - Cheeksphynx B
   processSpecialEffect_38(params) {
-    const occupant = this.state.data.board.tiles[params.tile].occupant;
+    const occupant = JSON.parse(
+      JSON.stringify(this.state.data.board.tiles[params.tile].occupant)
+    );
     occupant.id = this.data.id;
     this.processSummonEffect(occupant);
   }
 
   //39 - Cheeksphynx C
   processSpecialEffect_39(params) {
-    const occupant = this.state.data.board.tiles[params.tile].occupant;
+    const occupant = JSON.parse(
+      JSON.stringify(this.state.data.board.tiles[params.tile].occupant)
+    );
     occupant.id = this.data.id;
     this.initGiftEffect(occupant);
   }
