@@ -60,27 +60,17 @@ const Wheel = (props) => {
     props.data.current === props.opponent ? "#262626" : "#2F4F4F";
 
   return (
-    <div
-      style={{
-        width: "300px",
-        height: "300px",
-        position: "absolute",
-        bottom: "50px",
-        left: "50px",
-      }}
-    >
-      <svg width="300px" height="300">
-        <circle
-          cx="150"
-          cy="150"
-          r="145"
-          stroke={strokeColor}
-          strokeWidth="5"
-          fill={fillColor}
-        />
-        {wheelOutput}
-      </svg>
-    </div>
+    <svg width="300px" height="300">
+      <circle
+        cx="150"
+        cy="150"
+        r="145"
+        stroke={strokeColor}
+        strokeWidth="5"
+        fill={fillColor}
+      />
+      {wheelOutput}
+    </svg>
   );
 };
 

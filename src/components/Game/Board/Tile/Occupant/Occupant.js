@@ -142,8 +142,27 @@ const Occupant = (props) => {
     }
   };
 
+  const highlightOccupant = () => {
+    const payload = {
+      highlight: state.data.board.tiles[props.tile].occupant.id,
+    };
+    dispatch("HIGHLIGHT_OCCUPANT", payload);
+  };
+
+  const deHighlightOccupant = () => {
+    const payload = {
+      highlight: false,
+    };
+    dispatch("HIGHLIGHT_OCCUPANT", payload);
+  };
+
   const occupant = (
-    <g className={occupantClass} onClick={occupantHandler}>
+    <g
+      className={occupantClass}
+      onClick={occupantHandler}
+      onMouseEnter={highlightOccupant}
+      onMouseLeave={deHighlightOccupant}
+    >
       <defs>
         <pattern
           id={"creature-image" + props.tile}
