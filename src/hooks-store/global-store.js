@@ -1301,6 +1301,13 @@ const configureStore = (loadStore) => {
       }
       //Balloon Cheek
 
+      //Cheek Cannon
+      EP.processSpecialEffect(53, {
+        tile: data.tile_id,
+        player: data.player,
+      });
+      //Cheek Cannon
+
       updatedState.data.board.tiles[selected_occupant_id].occupant =
         attacker.health > 0 ? attacker : removeOccupant;
       updatedState.data.board.tiles[data.tile_id].occupant =

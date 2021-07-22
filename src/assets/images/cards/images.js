@@ -53,6 +53,9 @@ const images = {
     50: 'assets/images/cards/cavecheek.jpg',
     51: 'assets/images/cards/book_of_cheek.jpg',
     52: 'assets/images/cards/milk_of_the_cheek.jpg',
+    53: 'assets/images/cards/cheek_cannon.jpg',
+    54: 'assets/images/cards/cheekcrobats.jpg',
+    55: 'assets/images/cards/cheekcrobat.jpg',
 }
 
 export default images;

@@ -42,6 +42,7 @@ export default class EventProcessor {
       24: "processLastwordEffect_24",
       41: "processLastwordEffect_41",
       44: "processLastwordEffect_44",
+      54: "processLastwordEffect_54",
     };
     this.productionEffectLibrary = {
       19: "processProductionEffect_19",
@@ -54,6 +55,7 @@ export default class EventProcessor {
       38: "processSpecialEffect_38",
       39: "processSpecialEffect_39",
       43: "processSpecialEffect_43",
+      53: "processSpecialEffect_53",
     };
   }
 
@@ -697,6 +699,43 @@ export default class EventProcessor {
           hasMoved: true,
           hasDashed: false,
           hasAttacked: true,
+          effects: {
+            summon: false,
+            gift: false,
+            lastword: false,
+            production: false,
+          },
+          effectUsed: false,
+        };
+      case 55:
+        return {
+          player: params.player,
+          id: 55,
+          type: "creature",
+          faeria_cost: 2,
+          land_cost: { forest: 0, desert: 0, mountain: 0, lake: 0, wild: 0 },
+          attack: 2,
+          base_attack: 2,
+          health: 1,
+          base_health: 1,
+          movement: {
+            range: 1,
+            haste: true,
+            dash: 0,
+            special: {
+              aquatic: false,
+              flying: false,
+              jump: true,
+            },
+          },
+          taunt: false,
+          divine: false,
+          protection: false,
+          ranged: false,
+          canCollect: true,
+          hasMoved: false,
+          hasDashed: false,
+          hasAttacked: false,
           effects: {
             summon: false,
             gift: false,
@@ -1449,6 +1488,13 @@ export default class EventProcessor {
     //Balloon Cheek
   }
 
+  //54 - Cheekcrobats
+  processLastwordEffect_54(occupant, tile) {
+    this.state.data.board.tiles[tile].occupant = this.getOccupantByID(55, {
+      player: occupant.player,
+    });
+  }
+
   //Creatures - Gift Effects
 
   //1 - Mercheek
@@ -1735,6 +1781,22 @@ export default class EventProcessor {
           }
         });
       }
+    }
+  }
+
+  //53 - Cheek Cannon
+  processSpecialEffect_53(params) {
+    const availableTiles = this.getRandomTiles().filter(
+      (tile) =>
+        !this.state.data.board.tiles[tile].occupant.player &&
+        this.state.tiles[params.tile].adjacent.includes(tile) &&
+        this.state.data.board.tiles[tile].type !== "none"
+    );
+    if (availableTiles.length !== 0) {
+      this.state.data.board.tiles[availableTiles.splice(0, 1)].occupant =
+        this.getOccupantByID(55, {
+          player: params.player,
+        });
     }
   }
 }
