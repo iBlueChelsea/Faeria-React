@@ -1737,4 +1737,12 @@ export default class EventProcessor {
       }
     }
   }
+
+
+//44 - Cheekcrobats
+  processLastwordEffect_54(occupant, tile) {
+    this.state.data.board.tiles[tile].occupant = this.getOccupantByID(55, {
+      player: occupant.player,
+    });
+  }
 }
