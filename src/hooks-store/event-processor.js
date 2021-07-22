@@ -1786,10 +1786,13 @@ export default class EventProcessor {
 
   //53 - Cheek Cannon
   processSpecialEffect_53(params) {
+    const adjacent = (params.attack === "occupant"
+      ? this.state.tiles[params.tile].adjacent
+      : this.state.gods[params.god].adjacent);
     const availableTiles = this.getRandomTiles().filter(
       (tile) =>
         !this.state.data.board.tiles[tile].occupant.player &&
-        this.state.tiles[params.tile].adjacent.includes(tile) &&
+        adjacent.includes(tile) &&
         this.state.data.board.tiles[tile].type !== "none"
     );
     if (availableTiles.length !== 0) {

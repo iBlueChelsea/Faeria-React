@@ -1304,6 +1304,7 @@ const configureStore = (loadStore) => {
       //Cheek Cannon
       if (attacker.id === 53) {
         EP.processSpecialEffect(53, {
+          attack: "occupant",
           tile: data.tile_id,
           player: data.player,
         });
@@ -1335,6 +1336,9 @@ const configureStore = (loadStore) => {
         updatedState.tiles[key].selectable = false;
         updatedState.tiles[key].occupantSelectable = true;
       });
+      Object.keys(updatedState.gods).forEach((god) => {
+        updatedState.gods[god].selectable = false;
+      });
       updatedState.tiles[selected_occupant_id].occupantSelected = false;
       updatedState.currentAction = "";
       const formdata = new FormData();
@@ -1358,6 +1362,19 @@ const configureStore = (loadStore) => {
       updatedState.data.board.gods[data.god].wasHit = true;
       attacker.hasAttacked = true;
       attacker.hasMoved = true;
+
+      const EP = new EventProcessor(updatedState, data);
+
+      //Cheek Cannon
+      if (attacker.id === 53) {
+        EP.processSpecialEffect(53, {
+          attack: "god",
+          god: data.god,
+          player: data.player,
+        });
+      }
+      //Cheek Cannon
+
       updatedState.gods[data.god].selectable = false;
       if (updatedState.data[data.player].wheel_neutral_counter !== 1) {
         Object.keys(updatedState.wheelbuttons).forEach((key) => {
