@@ -69,13 +69,18 @@ const Game = () => {
       index={0}
       data={state.cardLibrary[state.highlightedOccupant]}
       classname="card-highlight"
-      width="180px"
-      height="246px"
+      width="240px"
+      height="326px"
       user={user}
       opponent={opponent}
       owner={user}
     />
   ) : null;
+
+  const endgamebutton =
+    state.data.status.current === user ? (
+      <EndGameButton opponent={opponent} />
+    ) : null;
 
   const output = state.data.status.finished ? (
     <div
@@ -146,9 +151,7 @@ const Game = () => {
           flexDirection: "column",
         }}
       >
-        <div style={{ height: "10vh" }}>
-          <EndGameButton opponent={opponent} />
-        </div>
+        <div style={{ height: "10vh" }}>{endgamebutton}</div>
         <div style={{ height: "40vh" }}>{highlighted_card}</div>
         <div style={{ height: "50vh" }}>
           <Wheel

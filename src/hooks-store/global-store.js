@@ -1302,10 +1302,12 @@ const configureStore = (loadStore) => {
       //Balloon Cheek
 
       //Cheek Cannon
-      EP.processSpecialEffect(53, {
-        tile: data.tile_id,
-        player: data.player,
-      });
+      if (attacker.id === 53) {
+        EP.processSpecialEffect(53, {
+          tile: data.tile_id,
+          player: data.player,
+        });
+      }
       //Cheek Cannon
 
       updatedState.data.board.tiles[selected_occupant_id].occupant =
@@ -1610,6 +1612,16 @@ const configureStore = (loadStore) => {
       const updatedState = JSON.parse(JSON.stringify(currentState));
       updatedState.data.status.winner = data.opponent;
       updatedState.data.status.finished = true;
+
+      const formdata = new FormData();
+      formdata.append("react_state", JSON.stringify(updatedState));
+      formdata.append("id", document.getElementById("game_id").value);
+      axios
+        .post("/faeria/Faeria/utils/saveState.php", formdata)
+        .catch((error) => {
+          console.log("Network Error", error.message);
+        });
+
       return updatedState;
     },
   };
