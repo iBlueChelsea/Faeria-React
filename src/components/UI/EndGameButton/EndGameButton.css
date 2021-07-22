@@ -1,0 +1,13 @@
+.endgame-button {
+  fill: #77101e;
+  stroke: #ff4b33;
+  stroke-width: 10px;
+  cursor: pointer;
+}
+
+.endgame-text {
+  stroke: #ff4b33;
+  stroke-width: 3px;
+  text-anchor: middle;
+  cursor: pointer;
+}

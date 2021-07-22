@@ -1601,6 +1601,17 @@ const configureStore = (loadStore) => {
 
       return updatedState;
     },
+    HIGHLIGHT_OCCUPANT: (currentState, data) => {
+      const updatedState = JSON.parse(JSON.stringify(currentState));
+      updatedState.highlightedOccupant = data.highlight;
+      return updatedState;
+    },
+    END_GAME: (currentState, data) => {
+      const updatedState = JSON.parse(JSON.stringify(currentState));
+      updatedState.data.status.winner = data.opponent;
+      updatedState.data.status.finished = true;
+      return updatedState;
+    },
   };
   initStore(actions, loadStore);
 };

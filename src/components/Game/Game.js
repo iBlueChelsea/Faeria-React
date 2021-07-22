@@ -5,6 +5,8 @@ import Wheel from "./Wheel/Wheel";
 import Infobox from "../UI/Infobox/Infobox";
 import MulliganModal from "../UI/MulliganModal/MulliganModal";
 import ChooseModal from "../UI/ChooseModal/ChooseModal";
+import Card from "./Hand/Card/Card";
+import EndGameButton from "../UI/EndGameButton/EndGameButton";
 import { useStore } from "../../hooks-store/store";
 import axios from "axios";
 
@@ -61,10 +63,29 @@ const Game = () => {
       <ChooseModal user={user} opponent={opponent} id={id} />
     ) : null;
 
+  const highlighted_card = state.highlightedOccupant ? (
+    <Card
+      id={id}
+      index={0}
+      data={state.cardLibrary[state.highlightedOccupant]}
+      classname="card-highlight"
+      width="180px"
+      height="246px"
+      user={user}
+      opponent={opponent}
+      owner={user}
+    />
+  ) : null;
+
   const output = state.data.status.finished ? (
-    <h1 style={{ textAlign: "center" }}>
-      WINNER: {state.data[state.data.status.winner].name}
-    </h1>
+    <div
+      style={{ display: "flex", flexDirection: "column", alignItems: "center" }}
+    >
+      <h1 style={{ textAlign: "center" }}>
+        WINNER: {state.data[state.data.status.winner].name}
+      </h1>
+      <img src="assets/images/ui/cheekwinner.png" width="50%"></img>
+    </div>
   ) : (
     <div style={{ display: "flex", height: "100vh" }}>
       {mulligan}
@@ -120,18 +141,23 @@ const Game = () => {
       <div
         style={{
           width: "20vw",
-          position: "relative",
           display: "flex",
-          justifyContent: "center",
-          flexWrap: "wrap",
+          alignItems: "center",
+          flexDirection: "column",
         }}
       >
-        <Wheel
-          data={state.data.status}
-          user={user}
-          opponent={opponent}
-          id={id}
-        />
+        <div style={{ height: "10vh" }}>
+          <EndGameButton opponent={opponent} />
+        </div>
+        <div style={{ height: "40vh" }}>{highlighted_card}</div>
+        <div style={{ height: "50vh" }}>
+          <Wheel
+            data={state.data.status}
+            user={user}
+            opponent={opponent}
+            id={id}
+          />
+        </div>
       </div>
     </div>
   );

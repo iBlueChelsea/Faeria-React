@@ -1,79 +1,79 @@
 .forest {
-    stroke: teal;
-    fill: #5bb21b;
-    stroke-width: 3px;
+  stroke: teal;
+  fill: #5bb21b;
+  stroke-width: 3px;
 }
 
 .lake {
-    stroke: teal;
-    fill: #0091e5;
-    stroke-width: 3px;
+  stroke: teal;
+  fill: #0091e5;
+  stroke-width: 3px;
 }
 
 .mountain {
-    stroke: teal;
-    fill: #cf3201;
-    stroke-width: 3px;
+  stroke: teal;
+  fill: #cf3201;
+  stroke-width: 3px;
 }
 
 .desert {
-    stroke: teal;
-    fill: #e5a018;
-    stroke-width: 3px;
+  stroke: teal;
+  fill: #e5a018;
+  stroke-width: 3px;
 }
 
 .prairie {
-    stroke: teal;
-    fill: #baa79e;
-    stroke-width: 3px;
+  stroke: teal;
+  fill: #baa79e;
+  stroke-width: 3px;
 }
 
 .forest-opponent {
-    stroke: teal;
-    fill: #22440a;
-    stroke-width: 3px;
+  stroke: teal;
+  fill: #22440a;
+  stroke-width: 3px;
 }
 
 .lake-opponent {
-    stroke: teal;
-    fill: #005586;
-    stroke-width: 3px;
+  stroke: teal;
+  fill: #005586;
+  stroke-width: 3px;
 }
 
 .mountain-opponent {
-    stroke: teal;
-    fill: #8d2100;
-    stroke-width: 3px;
+  stroke: teal;
+  fill: #8d2100;
+  stroke-width: 3px;
 }
 
 .desert-opponent {
-    stroke: teal;
-    fill: #8a600e;
-    stroke-width: 3px;
+  stroke: teal;
+  fill: #8a600e;
+  stroke-width: 3px;
 }
 
 .prairie-opponent {
-    stroke: teal;
-    fill: #5c524d;
-    stroke-width: 3px;
+  stroke: teal;
+  fill: #5c524d;
+  stroke-width: 3px;
 }
 
 .none {
-    stroke: teal;
-    fill: #00FFFF;
-    stroke-width: 3px;
+  stroke: teal;
+  fill: #00ffff;
+  stroke-width: 3px;
 }
 
 .none-opponent {
-    stroke: teal;
-    fill: #00FFFF;
-    stroke-width: 3px;
+  stroke: teal;
+  fill: #00ffff;
+  stroke-width: 3px;
 }
 
 .tile-selectable {
-    cursor: pointer;
+  cursor: pointer;
 }
 
 .tile-not-selectable {
-    cursor: not-allowed;
+  cursor: not-allowed;
 }

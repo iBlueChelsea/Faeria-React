@@ -1,76 +1,83 @@
 .card {
-    border-color: rgb(51, 51, 51);
-    border-style: groove;
-    border-width: 3px;
-    width: 120px;
-    transition: transform .2s;
-    cursor: pointer;
-    position: relative;
+  border-color: rgb(51, 51, 51);
+  border-style: groove;
+  border-width: 3px;
+  width: 120px;
+  transition: transform 0.2s;
+  cursor: pointer;
+  position: relative;
 }
 
 .card:hover {
-    transform: scale(2);
-    bottom: 50%;
-    z-index: 1;
+  transform: scale(2);
+  bottom: 50%;
+  z-index: 1;
 }
 
 .enemy-card {
-    border-color: rgb(51, 51, 51);
-    border-style: groove;
-    border-width: 3px;
-    width: 120px;
-    transition: transform .2s;
-    cursor: pointer;
-    position: relative;
+  border-color: rgb(51, 51, 51);
+  border-style: groove;
+  border-width: 3px;
+  width: 120px;
+  transition: transform 0.2s;
+  cursor: pointer;
+  position: relative;
 }
 
 .card-selected {
-    border-color: rgba(255, 254, 197, 0.849);
-    border-style: solid;
-    border-width: 3px;
-    cursor: pointer;
-    position: relative;
-    transform: scale(1.2);
-    bottom: 10%;
-    z-index: 2;
+  border-color: rgba(255, 254, 197, 0.849);
+  border-style: solid;
+  border-width: 3px;
+  cursor: pointer;
+  position: relative;
+  transform: scale(1.2);
+  bottom: 10%;
+  z-index: 2;
 }
 
 .card-mulligan {
-    border: 6px solid black;
-    border-radius: 12px;
-    width: 360px;
-    height: 480px;
-    margin: 20px;
-    cursor: pointer;
+  border: 6px solid black;
+  border-radius: 12px;
+  width: 360px;
+  height: 480px;
+  margin: 20px;
+  cursor: pointer;
 }
 
 .card-mulligan-selected {
-    border: 16px solid rgba(255, 254, 197, 0.849);
-    border-radius: 12px;
-    width: 360px;
-    height: 480px;
-    margin: 20px;
-    cursor: pointer;
+  border: 16px solid rgba(255, 254, 197, 0.849);
+  border-radius: 12px;
+  width: 360px;
+  height: 480px;
+  margin: 20px;
+  cursor: pointer;
 }
 
 .card-mulligan-selected img {
-    opacity: 0.4;
+  opacity: 0.4;
 }
 
 .card-choose {
-    border: 6px solid black;
-    border-radius: 12px;
-    width: 360px;
-    height: 480px;
-    margin: 20px;
-    cursor: pointer;
+  border: 6px solid black;
+  border-radius: 12px;
+  width: 360px;
+  height: 480px;
+  margin: 20px;
+  cursor: pointer;
 }
 
 .card-choose:hover {
-    border: 16px solid rgba(255, 254, 197, 0.849);
-    border-radius: 12px;
-    width: 360px;
-    height: 480px;
-    margin: 20px;
-    cursor: pointer;
+  border: 16px solid rgba(255, 254, 197, 0.849);
+  border-radius: 12px;
+  width: 360px;
+  height: 480px;
+  margin: 20px;
+  cursor: pointer;
+}
+
+.card-highlight {
+  border: 3px solid rgba(255, 255, 255, 0.4);
+  border-radius: 4px;
+  width: 180px;
+  height: 240px;
 }
